@@ -51,7 +51,17 @@ export default function DashboardPage() {
     );
   }
 
-  const { income, expenses, savings, transactions, budget } = data || {};
+  const { income, expenses, savings, transactions, budget, currency } =
+    data || {};
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency || "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+  };
 
   const calculatePercentageChange = (current: number, previous: number) => {
     if (!previous) return 0;
@@ -79,7 +89,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${income?.total.toFixed(2) || "0.00"}
+              {formatCurrency(income?.total || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               {calculatePercentageChange(
@@ -98,7 +108,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${expenses?.total.toFixed(2) || "0.00"}
+              {formatCurrency(expenses?.total || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               {calculatePercentageChange(
@@ -115,7 +125,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${savings?.total.toFixed(2) || "0.00"}
+              {formatCurrency(savings?.total || 0)}
             </div>
             <p className="text-xs text-muted-foreground">
               {calculatePercentageChange(
@@ -134,9 +144,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pl-2">
             <Overview
-              income={[income?.total || 0]}
-              expenses={[expenses?.total || 0]}
-              savings={[savings?.total || 0]}
+              income={
+                data?.monthlyData?.map((month) => month.income) ||
+                Array(12).fill(0)
+              }
+              expenses={
+                data?.monthlyData?.map((month) => month.expenses) ||
+                Array(12).fill(0)
+              }
+              savings={
+                data?.monthlyData?.map(
+                  (month) => month.income - month.expenses
+                ) || Array(12).fill(0)
+              }
+              currency={data?.currency || "USD"}
             />
           </CardContent>
         </Card>

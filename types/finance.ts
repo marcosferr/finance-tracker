@@ -103,6 +103,7 @@ export interface BudgetSummary {
 
 // Main financial data interface
 export interface FinancialData {
+  currency: string;
   income: {
     total: number;
     recurring: number;
@@ -144,6 +145,11 @@ export interface FinancialData {
     expenses: number[];
     savings: number[];
   };
+  monthlyData: {
+    month: string;
+    income: number;
+    expenses: number;
+  }[];
 }
 
 // Chat-related interfaces
@@ -157,7 +163,7 @@ export interface ChatMessage {
 }
 
 export interface ChatResponse {
-  content: React.ReactNode;
+  content: string;
   category?: string;
 }
 

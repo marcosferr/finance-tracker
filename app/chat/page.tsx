@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, Send, User, HelpCircle } from "lucide-react";
+import { Bot, Send, User, HelpCircle, Loader2 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,8 @@ import { ChatSuggestions } from "@/components/chat-suggestions";
 import { processChatQuery } from "@/lib/chat-processor";
 import type { ChatMessage as ChatMessageType } from "@/types/finance";
 import { apiService } from "@/lib/api-service";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([
@@ -107,66 +109,73 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex-1 p-4 pt-6 md:p-8">
-      <div className="grid h-[calc(100vh-8rem)] gap-4 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <Card className="flex h-full flex-col">
-            <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-              <div className="border-b px-4">
-                <TabsList className="h-14">
-                  <TabsTrigger value="chat" className="flex items-center gap-2">
-                    <Bot className="h-4 w-4" />
-                    <span>Financial Assistant</span>
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              <TabsContent
-                value="chat"
-                className="flex-1 flex flex-col p-0 m-0"
-              >
-                <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                  <div className="space-y-4 pb-4">
-                    {messages.map((message) => (
-                      <ChatMessage key={message.id} message={message} />
-                    ))}
+    <div className="flex-1">
+      <div className="h-screen flex flex-col">
+        <div className="flex-1 p-4 pt-6 md:p-8">
+          <div className="grid h-full gap-4 md:grid-cols-3">
+            <div className="md:col-span-2">
+              <Card className="flex h-full flex-col">
+                <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+                  <div className="border-b px-4">
+                    <TabsList className="h-14">
+                      <TabsTrigger
+                        value="chat"
+                        className="flex items-center gap-2"
+                      >
+                        <Bot className="h-4 w-4" />
+                        <span>Financial Assistant</span>
+                      </TabsTrigger>
+                    </TabsList>
                   </div>
-                </ScrollArea>
 
-                <div className="border-t p-4">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }}
-                    className="flex items-center gap-2"
+                  <TabsContent
+                    value="chat"
+                    className="flex-1 flex flex-col p-0 m-0"
                   >
-                    <Input
-                      ref={inputRef}
-                      placeholder="Ask about your finances..."
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      className="flex-1"
-                      disabled={isProcessing}
-                    />
-                    <Button
-                      type="submit"
-                      size="icon"
-                      disabled={isProcessing || input.trim() === ""}
-                    >
-                      <Send className="h-4 w-4" />
-                      <span className="sr-only">Send</span>
-                    </Button>
-                  </form>
-                </div>
-              </TabsContent>
-            </Tabs>
-          </Card>
-        </div>
+                    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+                      <div className="space-y-4 pb-4">
+                        {messages.map((message) => (
+                          <ChatMessage key={message.id} message={message} />
+                        ))}
+                      </div>
+                    </ScrollArea>
 
-        <div className="hidden md:flex flex-col gap-4">
-          <FinancialInsights />
-          <ChatSuggestions onSelectQuestion={handleSuggestedQuestion} />
+                    <div className="border-t p-4 sticky bottom-0 bg-background">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Input
+                          ref={inputRef}
+                          placeholder="Ask about your finances..."
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          className="flex-1"
+                          disabled={isProcessing}
+                        />
+                        <Button
+                          type="submit"
+                          size="icon"
+                          disabled={isProcessing || input.trim() === ""}
+                        >
+                          <Send className="h-4 w-4" />
+                          <span className="sr-only">Send</span>
+                        </Button>
+                      </form>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </Card>
+            </div>
+
+            <div className="hidden md:flex flex-col gap-4">
+              <FinancialInsights />
+              <ChatSuggestions onSelectQuestion={handleSuggestedQuestion} />
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -178,11 +187,11 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
     <div
       className={cn(
         "flex gap-3 max-w-[85%]",
-        message.role === "user" ? "ml-auto" : "mr-auto"
+        message.role === "user" ? "mr-auto" : "mr-auto"
       )}
     >
       {message.role === "assistant" && (
-        <Avatar className="h-8 w-8 mt-0.5">
+        <Avatar className="h-8 w-8 mt-0.5 shrink-0">
           <AvatarFallback className="bg-primary text-primary-foreground">
             <Bot className="h-4 w-4" />
           </AvatarFallback>
@@ -194,18 +203,54 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
           className={cn(
             "rounded-lg p-3",
             message.role === "user"
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted"
+              ? "bg-muted"
+              : "bg-primary text-primary-foreground"
           )}
         >
           <div className="space-y-2">
             {message.category && (
-              <Badge variant="outline" className="mb-1">
+              <Badge
+                variant="outline"
+                className="mb-1 bg-background/10 text-current"
+              >
                 {message.category}
               </Badge>
             )}
-            <div className="prose prose-sm dark:prose-invert">
-              {message.content}
+            <div
+              className={cn(
+                "prose dark:prose-invert max-w-none",
+                message.role === "assistant"
+                  ? [
+                      "text-primary-foreground/90",
+                      "prose-headings:text-primary-foreground prose-headings:font-semibold",
+                      "prose-p:text-primary-foreground/90",
+                      "prose-strong:text-primary-foreground prose-strong:font-semibold",
+                      "prose-ul:text-primary-foreground/90 prose-ol:text-primary-foreground/90",
+                      "prose-li:text-primary-foreground/90",
+                      "prose-code:text-primary-foreground/90 prose-code:bg-primary-foreground/10",
+                      "[&_*]:border-primary-foreground/20",
+                    ]
+                  : [
+                      "prose-headings:text-foreground prose-headings:font-semibold",
+                      "prose-p:text-muted-foreground",
+                      "prose-strong:text-foreground prose-strong:font-semibold",
+                      "prose-code:text-foreground prose-code:bg-muted",
+                      "[&_*]:border-border",
+                    ],
+                "prose-pre:bg-background/5 prose-pre:border prose-pre:border-border/10",
+                "prose-ul:my-2 prose-li:my-0.5 marker:text-current",
+                "prose-h1:text-xl prose-h2:text-lg prose-h3:text-base",
+                "prose-p:my-1.5 prose-p:leading-relaxed",
+                "prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md"
+              )}
+            >
+              {typeof message.content === "string" ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.content}
+                </ReactMarkdown>
+              ) : (
+                message.content
+              )}
             </div>
           </div>
         </div>
@@ -218,7 +263,7 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
       </div>
 
       {message.role === "user" && (
-        <Avatar className="h-8 w-8 mt-0.5">
+        <Avatar className="h-8 w-8 mt-0.5 shrink-0">
           <AvatarFallback className="bg-secondary">
             <User className="h-4 w-4" />
           </AvatarFallback>
@@ -230,10 +275,9 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
 
 function MessageSkeleton() {
   return (
-    <div className="space-y-2">
-      <Skeleton className="h-4 w-[250px]" />
-      <Skeleton className="h-4 w-[200px]" />
-      <Skeleton className="h-4 w-[150px]" />
+    <div className="flex items-center gap-2">
+      <Loader2 className="h-4 w-4 animate-spin" />
+      <p className="text-sm text-muted-foreground">AI is thinking...</p>
     </div>
   );
 }

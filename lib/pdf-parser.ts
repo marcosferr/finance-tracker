@@ -90,7 +90,8 @@ export async function extractTransactionsFromPDF(
     // Create the function schema for OpenAI
     const functionSchema = {
       name: "extract_transactions",
-      description: "Extract transactions from credit card statement",
+      description:
+        "Extract transactions from credit card statement. Take expenses as negative values and card payments as positive.",
       parameters: {
         type: "object",
         properties: {

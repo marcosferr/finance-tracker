@@ -10,14 +10,9 @@ export class OpenAIService {
 
       if (!response.success) {
         return {
-          content: (
-            <div>
-              <p>I encountered an error while processing your request.</p>
-              <p className="mt-2">{response.message}</p>
-              <hr className="my-2" />
-              {this.processMockQuery(query).content}
-            </div>
-          ),
+          content:
+            response.message ||
+            "An error occurred while processing your request.",
           category: "API Error",
         };
       }
@@ -26,7 +21,7 @@ export class OpenAIService {
       const category = this.determineCategoryFromQuery(query);
 
       return {
-        content: <div>{response.message}</div>,
+        content: response.message || "",
         category,
       };
     } catch (error) {
@@ -37,7 +32,14 @@ export class OpenAIService {
 
   private processMockQuery(query: string): ChatResponse {
     // Use the mock response generator
-    return generateChatResponse(query, apiService.getFinancialData());
+    const response = generateChatResponse(query, apiService.getFinancialData());
+    return {
+      content:
+        typeof response.content === "string"
+          ? response.content
+          : "Sorry, I couldn't process your request.",
+      category: response.category,
+    };
   }
 
   private determineCategoryFromQuery(query: string): string {

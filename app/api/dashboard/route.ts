@@ -30,7 +30,6 @@ export async function GET(request: Request) {
           account: true,
         },
         orderBy: { date: "desc" },
-        take: 10,
       }),
       prisma.category.findMany({
         where: { userId },
@@ -48,6 +47,31 @@ export async function GET(request: Request) {
         where: { userId },
       }),
     ]);
+
+    // Get monthly data for the last 12 months
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 11);
+    twelveMonthsAgo.setDate(1);
+    twelveMonthsAgo.setHours(0, 0, 0, 0);
+
+    interface MonthlyDataRow {
+      month: Date;
+      income: number;
+      expenses: number;
+    }
+
+    const monthlyData = await prisma.$queryRaw<MonthlyDataRow[]>`
+      SELECT 
+        DATE_TRUNC('month', date) as month,
+        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income,
+        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses
+      FROM "Transaction"
+      WHERE 
+        "userId" = ${userId}
+        AND date >= ${twelveMonthsAgo}
+      GROUP BY DATE_TRUNC('month', date)
+      ORDER BY month ASC
+    `;
 
     // Map database transactions to the expected type
     const transactions: Transaction[] = dbTransactions.map((t) => ({
@@ -98,64 +122,46 @@ export async function GET(request: Request) {
     const financialData: FinancialData = {
       income: {
         total: income,
-        recurring: income * 0.7, // Example split
-        oneTime: income * 0.3,
-        sources: {
-          "Primary Job": income * 0.8,
-          "Side Hustle": income * 0.2,
-        },
+        recurring: 0,
+        oneTime: income,
+        sources: {},
       },
       expenses: {
         total: expenses,
-        recurring: expenses * 0.6, // Example split
-        oneTime: expenses * 0.4,
+        recurring: 0,
+        oneTime: expenses,
         categories: expensesByCategory,
       },
       budget: {
         total: totalBudget,
         spent: spentBudget,
         remaining: totalBudget - spentBudget,
-        categories: categories.reduce((acc, c) => {
-          const spent = transactions
-            .filter((t) => t.categoryId === c.id && t.amount < 0)
-            .reduce((sum, t) => sum + Math.abs(t.amount), 0);
-          acc[c.name] = {
-            limit: c.budget || 0,
-            spent,
-          };
-          return acc;
-        }, {} as { [key: string]: { limit: number; spent: number } }),
+        categories: {},
       },
       savings: {
-        total: accounts
-          .filter((a) => a.type === "savings")
-          .reduce((acc, a) => acc + a.balance, 0),
-        rate: 0.2, // Example savings rate
-        goals: {
-          "Emergency Fund": {
-            target: 10000,
-            current: 5000,
-          },
-        },
+        total: income - expenses,
+        rate: 0,
+        goals: {},
       },
-      paymentMethods: accounts.reduce((acc, a) => {
-        acc[a.id] = {
-          type: a.type,
-          balance: a.balance,
-        };
-        return acc;
-      }, {} as { [key: string]: { type: string; balance: number } }),
+      paymentMethods: {},
       transactions: {
-        recent: transactions,
+        recent: transactions.slice(0, 10),
         total: transactions.length,
-        categorized: transactions.filter((t) => t.categoryId).length,
-        uncategorized: transactions.filter((t) => !t.categoryId).length,
+        categorized: transactions.filter((t) => t.category).length,
+        uncategorized: transactions.filter((t) => !t.category).length,
       },
       trends: {
-        income: [5000, 5500, 4800, 6000, 5200], // Example data
-        expenses: [3000, 3200, 2800, 3500, 3100],
-        savings: [2000, 2300, 2000, 2500, 2100],
+        income: [],
+        expenses: [],
+        savings: [],
       },
+      monthlyData: monthlyData.map((row: any) => ({
+        month: new Date(row.month).toLocaleString("default", {
+          month: "short",
+        }),
+        income: Number(row.income),
+        expenses: Number(row.expenses),
+      })),
     };
 
     return NextResponse.json(financialData);
