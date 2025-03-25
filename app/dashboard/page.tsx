@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: currency || "USD",
+      currency: currency || "PYG",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(value);

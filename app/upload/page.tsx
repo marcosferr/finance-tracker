@@ -43,6 +43,7 @@ import { Badge } from "@/components/ui/badge";
 import { processPDFUpload } from "@/app/actions/process-pdf-upload";
 import { saveExtractedTransactions } from "@/app/actions/save-extracted-transactions";
 import type { ExtractedTransaction } from "@/lib/pdf-parser";
+import { cn } from "@/lib/utils";
 
 export default function UploadPage() {
   const [file, setFile] = useState<File | null>(null);
@@ -61,6 +62,10 @@ export default function UploadPage() {
     "upload"
   );
   const [isComponentMounted, setIsComponentMounted] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>(
+    []
+  );
 
   // Set component mounted flag
   useEffect(() => {
@@ -68,7 +73,7 @@ export default function UploadPage() {
     return () => setIsComponentMounted(false);
   }, []);
 
-  // Load accounts and recent uploads
+  // Load accounts, categories and recent uploads
   useEffect(() => {
     if (!isComponentMounted) return;
 
@@ -82,6 +87,12 @@ export default function UploadPage() {
           if (accountsList.length > 0 && !selectedAccountId) {
             setSelectedAccountId(accountsList[0].id);
           }
+        }
+
+        const categoriesResponse = await fetch("/api/categories");
+        if (categoriesResponse.ok) {
+          const categoriesList = await categoriesResponse.json();
+          setCategories(categoriesList);
         }
 
         const uploadsResponse = await fetch("/api/uploads");
@@ -234,6 +245,29 @@ export default function UploadPage() {
     return <File className="h-4 w-4" />;
   };
 
+  const handleTransactionEdit = (
+    index: number,
+    field: keyof ExtractedTransaction,
+    value: string | number
+  ) => {
+    setExtractedTransactions((prev) => {
+      const newTransactions = [...prev];
+      newTransactions[index] = {
+        ...newTransactions[index],
+        [field]: value,
+      };
+      return newTransactions;
+    });
+  };
+
+  const handleEditStart = (index: number) => {
+    setEditingIndex(index);
+  };
+
+  const handleEditEnd = () => {
+    setEditingIndex(null);
+  };
+
   // Render upload step
   const renderUploadStep = () => (
     <Card>
@@ -361,8 +395,8 @@ export default function UploadPage() {
       <CardHeader>
         <CardTitle>Review Extracted Transactions</CardTitle>
         <CardDescription>
-          Review the transactions extracted from your PDF before saving them to
-          your account.
+          Review and edit the transactions extracted from your PDF before saving
+          them to your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -376,18 +410,134 @@ export default function UploadPage() {
                     <TableHead>Description</TableHead>
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="w-[100px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {extractedTransactions.map((transaction, index) => (
                     <TableRow key={index}>
-                      <TableCell>{transaction.date}</TableCell>
-                      <TableCell>{transaction.description}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">{transaction.category}</Badge>
+                        {editingIndex === index ? (
+                          <Input
+                            type="date"
+                            value={transaction.date}
+                            onChange={(e) =>
+                              handleTransactionEdit(
+                                index,
+                                "date",
+                                e.target.value
+                              )
+                            }
+                            onBlur={handleEditEnd}
+                            className="h-8"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => handleEditStart(index)}
+                            className="cursor-pointer"
+                          >
+                            {transaction.date}
+                          </span>
+                        )}
                       </TableCell>
-                      <TableCell className="text-right font-medium text-red-500">
-                        {transaction.amount.toLocaleString()}
+                      <TableCell>
+                        {editingIndex === index ? (
+                          <Input
+                            value={transaction.description}
+                            onChange={(e) =>
+                              handleTransactionEdit(
+                                index,
+                                "description",
+                                e.target.value
+                              )
+                            }
+                            onBlur={handleEditEnd}
+                            className="h-8"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => handleEditStart(index)}
+                            className="cursor-pointer"
+                          >
+                            {transaction.description}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {editingIndex === index ? (
+                          <Select
+                            value={transaction.category}
+                            onValueChange={(value) =>
+                              handleTransactionEdit(index, "category", value)
+                            }
+                            onOpenChange={(open) => !open && handleEditEnd()}
+                          >
+                            <SelectTrigger className="h-8">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((category) => (
+                                <SelectItem
+                                  key={category.id}
+                                  value={category.name}
+                                >
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="cursor-pointer"
+                            onClick={() => handleEditStart(index)}
+                          >
+                            {transaction.category}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {editingIndex === index ? (
+                          <Input
+                            type="number"
+                            value={transaction.amount}
+                            onChange={(e) =>
+                              handleTransactionEdit(
+                                index,
+                                "amount",
+                                parseFloat(e.target.value)
+                              )
+                            }
+                            onBlur={handleEditEnd}
+                            className="h-8 text-right"
+                          />
+                        ) : (
+                          <span
+                            onClick={() => handleEditStart(index)}
+                            className={cn(
+                              "cursor-pointer font-medium",
+                              transaction.amount >= 0
+                                ? "text-green-500"
+                                : "text-red-500"
+                            )}
+                          >
+                            {transaction.amount >= 0 ? "+" : ""}
+                            {Math.abs(transaction.amount).toLocaleString()}
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setExtractedTransactions((prev) =>
+                              prev.filter((_, i) => i !== index)
+                            );
+                          }}
+                        >
+                          Delete
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))}
