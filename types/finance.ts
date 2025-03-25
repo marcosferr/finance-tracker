@@ -217,3 +217,19 @@ export type Debt = {
   createdAt: Date;
   updatedAt: Date;
 };
+
+export type FinancialAsset = {
+  id: string;
+  name: string;
+  type: string;
+  amount: number;
+  interestRate: number;
+  startDate: Date;
+  maturityDate?: Date | null;
+  provider?: string | null;
+  status: string;
+  notes?: string | null;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};

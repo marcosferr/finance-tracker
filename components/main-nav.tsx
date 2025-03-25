@@ -46,6 +46,11 @@ const items = [
     icon: CreditCard,
   },
   {
+    title: "Financial Assets",
+    href: "/financial-assets",
+    icon: BarChart3,
+  },
+  {
     title: "Upload",
     href: "/upload",
     icon: Upload,

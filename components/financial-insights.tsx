@@ -100,7 +100,7 @@ export function FinancialInsights() {
           </ul>
         </div>
 
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <h3 className="text-sm font-medium">Spending Trends</h3>
           <div className="grid grid-cols-2 gap-2">
             <div className="rounded-lg border p-3">
@@ -144,7 +144,7 @@ export function FinancialInsights() {
               </p>
             </div>
           </div>
-        </div>
+        </div> */}
 
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Budget Status</h3>
