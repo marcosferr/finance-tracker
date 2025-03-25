@@ -31,9 +31,9 @@ export default function Home() {
             <Link href="/categories" className="text-sm font-medium">
               Categories
             </Link>
-            <Link href="/reports" className="text-sm font-medium">
+            {/* <Link href="/reports" className="text-sm font-medium">
               Reports
-            </Link>
+            </Link> */}
             <Link href="/chat" className="text-sm font-medium">
               Chat
             </Link>

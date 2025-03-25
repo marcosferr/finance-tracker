@@ -35,11 +35,11 @@ const items = [
     href: "/categories",
     icon: PieChart,
   },
-  {
-    title: "Reports",
-    href: "/reports",
-    icon: BarChart3,
-  },
+  // {
+  //   title: "Reports",
+  //   href: "/reports",
+  //   icon: BarChart3,
+  // },
   {
     title: "Debts",
     href: "/debts",

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -29,6 +29,22 @@ export function DebtModal({ isOpen, onClose, debt, onSave }: DebtModalProps) {
       status: "ACTIVE",
     }
   );
+
+  useEffect(() => {
+    if (debt) {
+      setFormData(debt);
+    } else {
+      setFormData({
+        name: "",
+        totalAmount: 0,
+        paidAmount: 0,
+        interestRate: 0,
+        dueDate: undefined,
+        notes: "",
+        status: "ACTIVE",
+      });
+    }
+  }, [debt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

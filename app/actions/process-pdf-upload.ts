@@ -76,25 +76,25 @@ export async function processPDFUpload(formData: FormData): Promise<{
     console.log("Debug - Settings found:", !!settings);
     console.log("Debug - Settings:", JSON.stringify(settings, null, 2));
 
-    if (!settings?.openaiApiKey) {
-      console.log("Debug - OpenAI API key not found in settings");
-      await prisma.fileUpload.update({
-        where: {
-          id: fileUpload.id,
-        },
-        data: {
-          status: "error",
-          errorMessage:
-            "OpenAI API key not found. Please add your API key in settings.",
-        },
-      });
+    // if (!settings?.openaiApiKey) { Uncomment this if you want to use the user's own API key
+    //   console.log("Debug - OpenAI API key not found in settings");
+    //   await prisma.fileUpload.update({
+    //     where: {
+    //       id: fileUpload.id,
+    //     },
+    //     data: {
+    //       status: "error",
+    //       errorMessage:
+    //         "OpenAI API key not found. Please add your API key in settings.",
+    //     },
+    //   });
 
-      return {
-        success: false,
-        error: "OpenAI API key not found. Please add your API key in settings.",
-        fileUploadId: fileUpload.id,
-      };
-    }
+    //   return {
+    //     success: false,
+    //     error: "OpenAI API key not found. Please add your API key in settings.",
+    //     fileUploadId: fileUpload.id,
+    //   };
+    // }
 
     // Get categories for the user
     const categories = await prisma.category.findMany({
@@ -109,7 +109,8 @@ export async function processPDFUpload(formData: FormData): Promise<{
       extractedTransactions = await extractTransactionsFromPDF(
         file,
         categories,
-        settings.openaiApiKey
+        ""
+        // settings.openaiApiKey // Uncomment this if you want to use the user's own API key
       );
     } catch (error) {
       // Update file upload status to error

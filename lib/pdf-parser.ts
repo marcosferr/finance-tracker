@@ -70,7 +70,8 @@ export async function extractTransactionsFromPDF(
 
     // Initialize OpenAI client
     const openai = new OpenAI({
-      apiKey: openaiApiKey,
+      // apiKey: openaiApiKey, // Use this if you want your user to use their own API key
+      apiKey: process.env.OPENAI_API_KEY,
     });
     console.log("[PDF Parser] OpenAI client initialized");
 

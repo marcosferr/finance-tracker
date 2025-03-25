@@ -66,17 +66,25 @@ export default function DebtsPage() {
       try {
         const response = await fetch(`/api/debts/${id}`, {
           method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
-          throw new Error("Failed to delete debt");
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Failed to delete debt");
         }
 
+        setDebts((prevDebts) => prevDebts.filter((debt) => debt.id !== id));
         toast.success("Debt deleted successfully");
+
         loadDebts();
       } catch (error) {
         console.error("Error deleting debt:", error);
-        toast.error("Failed to delete debt");
+        toast.error(
+          error instanceof Error ? error.message : "Failed to delete debt"
+        );
       }
     }
   };

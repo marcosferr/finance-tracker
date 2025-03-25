@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useState, useRef, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bot, Send, User, HelpCircle } from "lucide-react"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
-import { Skeleton } from "@/components/ui/skeleton"
-import { cn } from "@/lib/utils"
-import { FinancialInsights } from "@/components/financial-insights"
-import { ChatSuggestions } from "@/components/chat-suggestions"
-import { processChatQuery } from "@/lib/chat-processor"
-import type { ChatMessage as ChatMessageType } from "@/types/finance"
-import { apiService } from "@/lib/api-service"
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Bot, Send, User, HelpCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { FinancialInsights } from "@/components/financial-insights";
+import { ChatSuggestions } from "@/components/chat-suggestions";
+import { processChatQuery } from "@/lib/chat-processor";
+import type { ChatMessage as ChatMessageType } from "@/types/finance";
+import { apiService } from "@/lib/api-service";
 
 export default function ChatPage() {
   const [messages, setMessages] = useState<ChatMessageType[]>([
@@ -26,33 +26,27 @@ export default function ChatPage() {
       role: "assistant",
       timestamp: new Date(),
     },
-  ])
-  const [input, setInput] = useState("")
-  const [isProcessing, setIsProcessing] = useState(false)
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
-  const inputRef = useRef<HTMLInputElement>(null)
-  const [hasApiKey, setHasApiKey] = useState(false)
-
-  useEffect(() => {
-    // Check if the user has an OpenAI API key
-    setHasApiKey(apiService.hasOpenAIKey())
-  }, [])
+  ]);
+  const [input, setInput] = useState("");
+  const [isProcessing, setIsProcessing] = useState(false);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight
+      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
     }
-  }, [messages])
+  }, [messages]);
 
   const handleSendMessage = async () => {
-    if (input.trim() === "" || isProcessing) return
+    if (input.trim() === "" || isProcessing) return;
 
     const userMessage: ChatMessageType = {
       id: Date.now().toString(),
       content: input,
       role: "user",
       timestamp: new Date(),
-    }
+    };
 
     const loadingMessage: ChatMessageType = {
       id: (Date.now() + 1).toString(),
@@ -60,15 +54,15 @@ export default function ChatPage() {
       role: "assistant",
       timestamp: new Date(),
       isLoading: true,
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage, loadingMessage])
-    setInput("")
-    setIsProcessing(true)
+    setMessages((prev) => [...prev, userMessage, loadingMessage]);
+    setInput("");
+    setIsProcessing(true);
 
     try {
       // Process the query using our chat processor
-      const response = await processChatQuery(input)
+      const response = await processChatQuery(input);
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -80,36 +74,37 @@ export default function ChatPage() {
                 timestamp: new Date(),
                 category: response.category,
               }
-            : msg,
-        ),
-      )
+            : msg
+        )
+      );
     } catch (error) {
       setMessages((prev) =>
         prev.map((msg) =>
           msg.isLoading
             ? {
                 id: msg.id,
-                content: "I'm sorry, I encountered an error processing your request. Please try again.",
+                content:
+                  "I'm sorry, I encountered an error processing your request. Please try again.",
                 role: "assistant",
                 timestamp: new Date(),
               }
-            : msg,
-        ),
-      )
+            : msg
+        )
+      );
     } finally {
-      setIsProcessing(false)
+      setIsProcessing(false);
       if (inputRef.current) {
-        inputRef.current.focus()
+        inputRef.current.focus();
       }
     }
-  }
+  };
 
   const handleSuggestedQuestion = (question: string) => {
-    setInput(question)
+    setInput(question);
     setTimeout(() => {
-      handleSendMessage()
-    }, 100)
-  }
+      handleSendMessage();
+    }, 100);
+  };
 
   return (
     <div className="flex-1 p-4 pt-6 md:p-8">
@@ -126,7 +121,10 @@ export default function ChatPage() {
                 </TabsList>
               </div>
 
-              <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
+              <TabsContent
+                value="chat"
+                className="flex-1 flex flex-col p-0 m-0"
+              >
                 <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
                   <div className="space-y-4 pb-4">
                     {messages.map((message) => (
@@ -136,25 +134,10 @@ export default function ChatPage() {
                 </ScrollArea>
 
                 <div className="border-t p-4">
-                  {!hasApiKey && (
-                    <div className="mb-3 px-3 py-2 text-sm bg-muted rounded-md flex items-start gap-2">
-                      <HelpCircle className="h-4 w-4 mt-0.5 shrink-0" />
-                      <div>
-                        <p>
-                          You're currently using mock data. For personalized AI responses,{" "}
-                          <a href="/settings" className="text-primary underline">
-                            add your OpenAI API key
-                          </a>{" "}
-                          in settings.
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
                   <form
                     onSubmit={(e) => {
-                      e.preventDefault()
-                      handleSendMessage()
+                      e.preventDefault();
+                      handleSendMessage();
                     }}
                     className="flex items-center gap-2"
                   >
@@ -166,7 +149,11 @@ export default function ChatPage() {
                       className="flex-1"
                       disabled={isProcessing}
                     />
-                    <Button type="submit" size="icon" disabled={isProcessing || input.trim() === ""}>
+                    <Button
+                      type="submit"
+                      size="icon"
+                      disabled={isProcessing || input.trim() === ""}
+                    >
                       <Send className="h-4 w-4" />
                       <span className="sr-only">Send</span>
                     </Button>
@@ -183,12 +170,17 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 function ChatMessage({ message }: { message: ChatMessageType }) {
   return (
-    <div className={cn("flex gap-3 max-w-[85%]", message.role === "user" ? "ml-auto" : "mr-auto")}>
+    <div
+      className={cn(
+        "flex gap-3 max-w-[85%]",
+        message.role === "user" ? "ml-auto" : "mr-auto"
+      )}
+    >
       {message.role === "assistant" && (
         <Avatar className="h-8 w-8 mt-0.5">
           <AvatarFallback className="bg-primary text-primary-foreground">
@@ -199,7 +191,12 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
 
       <div className="flex flex-col gap-1">
         <div
-          className={cn("rounded-lg p-3", message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted")}
+          className={cn(
+            "rounded-lg p-3",
+            message.role === "user"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted"
+          )}
         >
           <div className="space-y-2">
             {message.category && (
@@ -207,7 +204,9 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
                 {message.category}
               </Badge>
             )}
-            <div className="prose prose-sm dark:prose-invert">{message.content}</div>
+            <div className="prose prose-sm dark:prose-invert">
+              {message.content}
+            </div>
           </div>
         </div>
         <span className="text-xs text-muted-foreground px-1">
@@ -226,7 +225,7 @@ function ChatMessage({ message }: { message: ChatMessageType }) {
         </Avatar>
       )}
     </div>
-  )
+  );
 }
 
 function MessageSkeleton() {
@@ -236,6 +235,5 @@ function MessageSkeleton() {
       <Skeleton className="h-4 w-[200px]" />
       <Skeleton className="h-4 w-[150px]" />
     </div>
-  )
+  );
 }
-
