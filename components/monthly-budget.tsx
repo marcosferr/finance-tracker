@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { Progress } from "@/components/ui/progress"
+import { Progress } from "@/components/ui/progress";
 
 const budgetCategories = [
   {
@@ -33,7 +33,7 @@ const budgetCategories = [
     budget: 150,
     color: "bg-[#828A8E]",
   },
-]
+];
 
 export function MonthlyBudget() {
   return (
@@ -48,12 +48,13 @@ export function MonthlyBudget() {
           </div>
           <Progress
             value={(item.spent / item.budget) * 100}
-            className={`h-2 ${item.spent > item.budget ? "bg-red-200" : "bg-muted"}`}
-            indicatorClassName={item.spent > item.budget ? "bg-red-500" : item.color}
+            className={`h-2 ${
+              item.spent > item.budget ? "bg-red-200" : "bg-muted"
+            }`}
+            // indicatorClassName={item.spent > item.budget ? "bg-red-500" : item.color}
           />
         </div>
       ))}
     </div>
-  )
+  );
 }
-

@@ -203,3 +203,17 @@ export const AVAILABLE_CURRENCIES: { [key in Currency]: string } = {
 export const getCurrencySymbol = (currency: Currency): string => {
   return AVAILABLE_CURRENCIES[currency] || currency;
 };
+
+export type Debt = {
+  id: string;
+  name: string;
+  totalAmount: number;
+  paidAmount: number;
+  interestRate: number;
+  dueDate?: Date;
+  status: "ACTIVE" | "PAID" | "DEFAULTED";
+  notes?: string;
+  userId: string;
+  createdAt: Date;
+  updatedAt: Date;
+};

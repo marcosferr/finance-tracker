@@ -11,24 +11,26 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String    @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  resetToken    String?   // Add this field
+  id               String    @id @default(cuid())
+  name             String?
+  email            String    @unique
+  emailVerified    DateTime?
+  image            String?
+  password         String?
+  resetToken       String? // Add this field
   resetTokenExpiry DateTime? // Add this field
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  accounts       Account[]
-  sessions       Session[]
-  transactions   Transaction[]
-  categories     Category[]
+  accounts          Account[]
+  sessions          Session[]
+  transactions      Transaction[]
+  categories        Category[]
   financialAccounts FinancialAccount[]
-  fileUploads    FileUpload[]
-  settings       UserSettings?
+  fileUploads       FileUpload[]
+  settings          UserSettings?
+  debts             Debt[]
+  FinancialAsset    FinancialAsset[]
 }
 
 model Account {
@@ -69,7 +71,7 @@ model VerificationToken {
 model FinancialAccount {
   id        String   @id @default(cuid())
   name      String
-  type      String   // checking, savings, credit, investment, other
+  type      String // checking, savings, credit, investment, other
   balance   Float
   currency  String   @default("USD")
   color     String?
@@ -122,16 +124,16 @@ model Transaction {
 }
 
 model FileUpload {
-  id              String   @id @default(cuid())
-  filename        String
-  fileType        String   // csv, xlsx, pdf
-  uploadDate      DateTime @default(now())
-  accountId       String
-  userId          String
-  transactionCount Int     @default(0)
-  status          String   // processing, completed, error
-  errorMessage    String?
-  
+  id               String   @id @default(cuid())
+  filename         String
+  fileType         String // csv, xlsx, pdf
+  uploadDate       DateTime @default(now())
+  accountId        String
+  userId           String
+  transactionCount Int      @default(0)
+  status           String // processing, completed, error
+  errorMessage     String?
+
   user    User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   account FinancialAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
@@ -140,13 +142,50 @@ model FileUpload {
 }
 
 model UserSettings {
-  id             String  @id @default(cuid())
-  userId         String  @unique
-  theme          String? // light, dark, system
-  currency       String  @default("USD")
-  language       String  @default("en")
-  openaiApiKey   String? @db.Text
+  id           String  @id @default(cuid())
+  userId       String  @unique
+  theme        String? // light, dark, system
+  currency     String  @default("USD")
+  language     String  @default("en")
+  openaiApiKey String? @db.Text
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+model Debt {
+  id           String    @id @default(cuid())
+  name         String
+  totalAmount  Float
+  paidAmount   Float     @default(0)
+  interestRate Float
+  dueDate      DateTime?
+  status       String    @default("ACTIVE") // ACTIVE, PAID, DEFAULTED
+  notes        String?
+  userId       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model FinancialAsset {
+  id           String    @id @default(cuid())
+  name         String
+  type         String // CDA, ETF, MUTUAL_FUND, STOCK, BOND, OTHER
+  amount       Float
+  interestRate Float
+  startDate    DateTime  @default(now())
+  maturityDate DateTime?
+  provider     String? // Financial institution or broker
+  status       String    @default("ACTIVE") // ACTIVE, MATURED, SOLD
+  notes        String?
+  userId       String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}

@@ -1,13 +1,13 @@
-import type { Metadata } from "next"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { ArrowRight, Upload, Wallet2, MessageSquare } from "lucide-react"
-import { ThemeToggle } from "@/components/theme-toggle"
+import type { Metadata } from "next";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowRight, Upload, Wallet2, MessageSquare } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: "Finance Tracker",
   description: "Track and manage your personal finances",
-}
+};
 
 export default function Home() {
   return (
@@ -24,6 +24,9 @@ export default function Home() {
             </Link>
             <Link href="/transactions" className="text-sm font-medium">
               Transactions
+            </Link>
+            <Link href="/debts" className="text-sm font-medium">
+              Debts
             </Link>
             <Link href="/categories" className="text-sm font-medium">
               Categories
@@ -47,7 +50,8 @@ export default function Home() {
                   Take Control of Your Finances
                 </h1>
                 <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                  Track your income and expenses, categorize transactions, and gain insights into your spending habits.
+                  Track your income and expenses, categorize transactions, and
+                  gain insights into your spending habits.
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
@@ -77,7 +81,8 @@ export default function Home() {
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">Track Transactions</h3>
                   <p className="text-muted-foreground">
-                    Easily record and categorize your income and expenses to keep track of your financial activities.
+                    Easily record and categorize your income and expenses to
+                    keep track of your financial activities.
                   </p>
                 </div>
               </div>
@@ -88,7 +93,8 @@ export default function Home() {
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">Import Data</h3>
                   <p className="text-muted-foreground">
-                    Upload transaction data from CSV or Excel files to quickly populate your financial records.
+                    Upload transaction data from CSV or Excel files to quickly
+                    populate your financial records.
                   </p>
                 </div>
               </div>
@@ -99,8 +105,8 @@ export default function Home() {
                 <div className="space-y-2">
                   <h3 className="text-xl font-bold">AI Financial Assistant</h3>
                   <p className="text-muted-foreground">
-                    Chat with our AI assistant to get insights, analyze spending patterns, and receive personalized
-                    financial advice.
+                    Chat with our AI assistant to get insights, analyze spending
+                    patterns, and receive personalized financial advice.
                   </p>
                 </div>
               </div>
@@ -127,6 +133,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }
-
