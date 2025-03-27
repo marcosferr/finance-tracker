@@ -153,9 +153,8 @@ export default function DashboardPage() {
                 Array(12).fill(0)
               }
               savings={
-                data?.monthlyData?.map(
-                  (month) => month.income - month.expenses
-                ) || Array(12).fill(0)
+                data?.monthlyData?.map((month) => month.savings) ||
+                Array(12).fill(0)
               }
               currency={data?.currency || "USD"}
             />

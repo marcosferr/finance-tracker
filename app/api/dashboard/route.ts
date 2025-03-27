@@ -58,19 +58,40 @@ export async function GET(request: Request) {
       month: Date;
       income: number;
       expenses: number;
+      savings: number;
     }
 
     const monthlyData = await prisma.$queryRaw<MonthlyDataRow[]>`
+      WITH monthly_transactions AS (
+        SELECT 
+          DATE_TRUNC('month', date) as month,
+          SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income,
+          SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses
+        FROM "Transaction"
+        WHERE 
+          "userId" = ${userId}
+          AND date >= ${twelveMonthsAgo}
+        GROUP BY DATE_TRUNC('month', date)
+      ),
+      monthly_savings AS (
+        SELECT 
+          DATE_TRUNC('month', "createdAt") as month,
+          SUM(balance) as savings
+        FROM "FinancialAccount"
+        WHERE 
+          "userId" = ${userId}
+          AND type = 'SAVINGS'
+          AND "createdAt" >= ${twelveMonthsAgo}
+        GROUP BY DATE_TRUNC('month', "createdAt")
+      )
       SELECT 
-        DATE_TRUNC('month', date) as month,
-        SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income,
-        SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses
-      FROM "Transaction"
-      WHERE 
-        "userId" = ${userId}
-        AND date >= ${twelveMonthsAgo}
-      GROUP BY DATE_TRUNC('month', date)
-      ORDER BY month ASC
+        mt.month,
+        mt.income,
+        mt.expenses,
+        COALESCE(ms.savings, 0) as savings
+      FROM monthly_transactions mt
+      LEFT JOIN monthly_savings ms ON mt.month = ms.month
+      ORDER BY mt.month ASC
     `;
 
     // Map database transactions to the expected type
@@ -103,6 +124,11 @@ export async function GET(request: Request) {
       .filter((t) => t.amount < 0)
       .reduce((acc, t) => acc + Math.abs(t.amount), 0);
 
+    // Calculate total savings from savings accounts
+    const savingsTotal = accounts
+      .filter((account) => account.type === "SAVINGS")
+      .reduce((acc, account) => acc + account.balance, 0);
+
     // Calculate expenses by category
     const expensesByCategory = transactions
       .filter((t) => t.amount < 0)
@@ -120,6 +146,7 @@ export async function GET(request: Request) {
 
     // Prepare the response data
     const financialData: FinancialData = {
+      currency: userSettings?.currency || "USD",
       income: {
         total: income,
         recurring: 0,
@@ -139,8 +166,8 @@ export async function GET(request: Request) {
         categories: {},
       },
       savings: {
-        total: income - expenses,
-        rate: 0,
+        total: savingsTotal,
+        rate: income > 0 ? (savingsTotal / income) * 100 : 0,
         goals: {},
       },
       paymentMethods: {},
@@ -161,6 +188,7 @@ export async function GET(request: Request) {
         }),
         income: Number(row.income),
         expenses: Number(row.expenses),
+        savings: Number(row.savings),
       })),
     };
 

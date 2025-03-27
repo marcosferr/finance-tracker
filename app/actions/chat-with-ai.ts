@@ -10,7 +10,8 @@ import {
   getUserAccounts,
   getUserCategories,
   getUserTransactions,
-} from "@/lib/financial-data";
+  generateCustomReport,
+} from "@/app/lib/financial-data";
 
 const functions = [
   {
@@ -66,6 +67,20 @@ const functions = [
         },
       },
       required: ["startDate", "endDate"],
+    },
+  },
+  {
+    name: "generate_custom_report",
+    description: "Generate a custom SQL report based on the user's question",
+    parameters: {
+      type: "object",
+      properties: {
+        queryDescription: {
+          type: "string",
+          description: "Description of the data needed for the report",
+        },
+      },
+      required: ["queryDescription"],
     },
   },
 ];
@@ -143,6 +158,12 @@ export async function chatWithAI(message: string) {
               session.user.id,
               new Date(functionArgs.startDate),
               new Date(functionArgs.endDate)
+            );
+            break;
+          case "generate_custom_report":
+            functionResponse = await generateCustomReport(
+              session.user.id,
+              functionArgs.queryDescription
             );
             break;
           default:
