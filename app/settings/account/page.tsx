@@ -18,6 +18,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { AlertCircle, CheckCircle } from "lucide-react";
+import dynamic from "next/dynamic";
+
+// Create a client-side only wrapper component
+const AccountSettingsContent = dynamic(
+  () => Promise.resolve(AccountSettingsPage),
+  {
+    ssr: false,
+  }
+);
 
 const profileSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -48,7 +57,8 @@ const passwordSchema = z
 type ProfileFormValues = z.infer<typeof profileSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
-export default function AccountSettingsPage() {
+// Move the main component logic here
+function AccountSettingsPage() {
   const { data: session, update, status } = useSession();
   const [profileLoading, setProfileLoading] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
@@ -335,4 +345,9 @@ export default function AccountSettingsPage() {
       </div>
     </div>
   );
+}
+
+// Export the wrapped component
+export default function Page() {
+  return <AccountSettingsContent />;
 }
