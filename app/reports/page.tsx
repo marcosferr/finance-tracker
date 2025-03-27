@@ -1,24 +1,63 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { CalendarIcon, Download } from "lucide-react"
-import { format } from "date-fns"
-import { cn } from "@/lib/utils"
-import { Overview } from "@/components/overview"
-import { ExpensesByCategory } from "@/components/expenses-by-category"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { CalendarIcon, Download } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Overview } from "@/components/overview";
+import { ExpensesByCategory } from "@/components/expenses-by-category";
 
 export default function ReportsPage() {
-  const [date, setDate] = useState({
+  const [date, setDate] = useState<{ from: Date; to: Date }>({
     from: new Date(2023, 5, 1),
     to: new Date(2023, 5, 30),
-  })
-  const [reportType, setReportType] = useState("monthly")
+  });
+  const [reportType, setReportType] = useState("monthly");
+
+  // Mock data for the components
+  const overviewData = {
+    income: Array(12)
+      .fill(0)
+      .map(() => Math.random() * 5000),
+    expenses: Array(12)
+      .fill(0)
+      .map(() => Math.random() * 3000),
+    savings: Array(12)
+      .fill(0)
+      .map(() => Math.random() * 2000),
+    currency: "USD",
+  };
+
+  const expensesData = {
+    Housing: 1200,
+    Food: 800,
+    Transportation: 400,
+    Entertainment: 300,
+    Utilities: 250,
+    Other: 200,
+  };
 
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
@@ -34,7 +73,9 @@ export default function ReportsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Report Settings</CardTitle>
-              <CardDescription>Configure your report parameters.</CardDescription>
+              <CardDescription>
+                Configure your report parameters.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -57,13 +98,17 @@ export default function ReportsPage() {
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
-                      className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !date && "text-muted-foreground"
+                      )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {date?.from ? (
                         date.to ? (
                           <>
-                            {format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}
+                            {format(date.from, "LLL dd, y")} -{" "}
+                            {format(date.to, "LLL dd, y")}
                           </>
                         ) : (
                           format(date.from, "LLL dd, y")
@@ -74,7 +119,16 @@ export default function ReportsPage() {
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="range" selected={date} onSelect={setDate} initialFocus />
+                    <Calendar
+                      mode="range"
+                      selected={date}
+                      onSelect={(range) => {
+                        if (range?.from && range?.to) {
+                          setDate({ from: range.from, to: range.to });
+                        }
+                      }}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -127,18 +181,23 @@ export default function ReportsPage() {
                 <CardHeader>
                   <CardTitle>Financial Overview</CardTitle>
                   <CardDescription>
-                    {format(date.from, "MMMM d, yyyy")} - {format(date.to, "MMMM d, yyyy")}
+                    {format(date.from, "MMMM d, yyyy")} -{" "}
+                    {format(date.to, "MMMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium">Total Income</h3>
-                      <div className="text-2xl font-bold text-green-500">$3,456.78</div>
+                      <div className="text-2xl font-bold text-green-500">
+                        $3,456.78
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium">Total Expenses</h3>
-                      <div className="text-2xl font-bold text-red-500">$2,224.89</div>
+                      <div className="text-2xl font-bold text-red-500">
+                        $2,224.89
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <h3 className="text-sm font-medium">Net Savings</h3>
@@ -146,7 +205,7 @@ export default function ReportsPage() {
                     </div>
                   </div>
                   <div className="mt-6">
-                    <Overview />
+                    <Overview {...overviewData} />
                   </div>
                 </CardContent>
               </Card>
@@ -156,11 +215,12 @@ export default function ReportsPage() {
                 <CardHeader>
                   <CardTitle>Spending by Category</CardTitle>
                   <CardDescription>
-                    {format(date.from, "MMMM d, yyyy")} - {format(date.to, "MMMM d, yyyy")}
+                    {format(date.from, "MMMM d, yyyy")} -{" "}
+                    {format(date.to, "MMMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ExpensesByCategory />
+                  <ExpensesByCategory data={expensesData} />
                 </CardContent>
               </Card>
             </TabsContent>
@@ -169,7 +229,8 @@ export default function ReportsPage() {
                 <CardHeader>
                   <CardTitle>Monthly Trends</CardTitle>
                   <CardDescription>
-                    {format(date.from, "MMMM d, yyyy")} - {format(date.to, "MMMM d, yyyy")}
+                    {format(date.from, "MMMM d, yyyy")} -{" "}
+                    {format(date.to, "MMMM d, yyyy")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -181,6 +242,5 @@ export default function ReportsPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
-
