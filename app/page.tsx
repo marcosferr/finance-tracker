@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Upload, Wallet2, MessageSquare } from "lucide-react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { MobileNav } from "@/components/mobile-nav";
 
 export const metadata: Metadata = {
   title: "Finance Tracker",
@@ -13,12 +14,13 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center">
-          <div className="mr-4 flex items-center gap-2">
+        <div className="container flex h-16 items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MobileNav />
             <Wallet2 className="h-6 w-6" />
             <span className="text-xl font-bold">Finance Tracker</span>
           </div>
-          <nav className="flex flex-1 items-center justify-end space-x-4">
+          <nav className="hidden md:flex items-center space-x-4">
             <Link href="/dashboard" className="text-sm font-medium">
               Dashboard
             </Link>
@@ -37,8 +39,8 @@ export default function Home() {
             <Link href="/chat" className="text-sm font-medium">
               Chat
             </Link>
-            <ThemeToggle />
           </nav>
+          <ThemeToggle />
         </div>
       </header>
       <main className="flex-1">
