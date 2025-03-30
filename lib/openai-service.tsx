@@ -3,10 +3,19 @@ import { apiService } from "@/lib/api-service";
 import { generateChatResponse } from "@/lib/response-templates";
 import { chatWithAI } from "@/app/actions/chat-with-ai";
 
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "function";
+  content: string;
+  name?: string;
+};
+
 export class OpenAIService {
-  public async processChatQuery(query: string): Promise<ChatResponse> {
+  public async processChatQuery(
+    query: string,
+    chatContext: ChatMessage[] = []
+  ): Promise<ChatResponse> {
     try {
-      const response = await chatWithAI(query);
+      const response = await chatWithAI(query, chatContext);
 
       if (!response.success) {
         return {

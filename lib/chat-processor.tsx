@@ -1,5 +1,6 @@
 import type { ChatResponse } from "@/types/finance";
 import { openaiService } from "@/lib/openai-service";
+import ChatCompletionMessageParam from "openai";
 
 // Mock financial data
 const financialData = {
@@ -485,6 +486,9 @@ const responseTemplates = {
 };
 
 // Function to process chat queries
-export async function processChatQuery(query: string): Promise<ChatResponse> {
-  return openaiService.processChatQuery(query);
+export async function processChatQuery(
+  query: string,
+  chatContext: ChatCompletionMessageParam[] = []
+): Promise<ChatResponse> {
+  return openaiService.processChatQuery(query, chatContext);
 }

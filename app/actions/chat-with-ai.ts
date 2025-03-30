@@ -85,7 +85,16 @@ const functions = [
   },
 ];
 
-export async function chatWithAI(message: string) {
+type ChatMessage = {
+  role: "system" | "user" | "assistant" | "function";
+  content: string;
+  name?: string;
+};
+
+export async function chatWithAI(
+  message: string,
+  chatContext: ChatMessage[] = []
+) {
   try {
     const session = await getAuthSession();
 
@@ -105,19 +114,32 @@ export async function chatWithAI(message: string) {
       apiKey: process.env.OPENAI_API_KEY,
     });
 
-    // Initial system message
-    const messages: ChatCompletionMessageParam[] = [
+    // Convert our chat messages to OpenAI format
+    const messages = [
       {
-        role: "system",
+        role: "system" as const,
         content: `You are a helpful financial assistant. You help users understand their financial data and provide insights and advice.
         You have access to various functions to retrieve financial information. Use these functions to gather relevant data before providing answers.
         Always provide specific, data-driven insights based on the retrieved information.`,
       },
+      ...chatContext.map((msg) => {
+        if (msg.role === "function" && msg.name) {
+          return {
+            role: "function" as const,
+            name: msg.name,
+            content: msg.content,
+          };
+        }
+        return {
+          role: msg.role,
+          content: msg.content,
+        };
+      }),
       {
-        role: "user",
+        role: "user" as const,
         content: message,
       },
-    ];
+    ] as ChatCompletionMessageParam[];
 
     let shouldContinue = true;
     let finalResponse = null;
@@ -133,7 +155,12 @@ export async function chatWithAI(message: string) {
       });
 
       const message = response.choices[0].message;
-      messages.push(message);
+      if (message.content) {
+        messages.push({
+          role: "assistant" as const,
+          content: message.content,
+        });
+      }
 
       if (message.function_call) {
         const functionName = message.function_call.name;
@@ -171,7 +198,7 @@ export async function chatWithAI(message: string) {
         }
 
         messages.push({
-          role: "function",
+          role: "function" as const,
           name: functionName,
           content: JSON.stringify(functionResponse),
         });

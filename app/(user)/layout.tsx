@@ -25,11 +25,11 @@ export default function DashboardLayout({
           </div>
         </div>
       </header>
-      <div className="flex flex-1">
+      <div className="flex flex-1 overflow-hidden">
         <aside className="hidden w-[200px] flex-col border-r md:flex">
           <MainNav />
         </aside>
-        <main className="flex-1 overflow-auto">{children}</main>
+        <main className="flex-1 overflow-hidden">{children}</main>
       </div>
     </div>
   );

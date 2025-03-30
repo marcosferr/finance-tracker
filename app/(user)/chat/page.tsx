@@ -68,8 +68,16 @@ export default function ChatPage() {
     setIsProcessing(true);
 
     try {
-      // Process the query using our chat processor
-      const response = await processChatQuery(input);
+      // Create chat context from previous messages
+      const chatContext = messages
+        .map((msg) => ({
+          role: msg.role,
+          content: typeof msg.content === "string" ? msg.content : "",
+        }))
+        .filter((msg) => msg.content !== ""); // Filter out non-string content
+
+      // Process the query using our chat processor with context
+      const response = await processChatQuery(input, chatContext);
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -114,12 +122,15 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col">
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 p-4 md:p-6 overflow-hidden">
-        <div className="grid h-full gap-4 md:grid-cols-3">
-          <div className="md:col-span-2 h-full flex flex-col">
+        <div className="grid h-full gap-4 md:grid-cols-3 overflow-hidden">
+          <div className="md:col-span-2 h-full flex flex-col overflow-hidden">
             <Card className="flex-1 flex flex-col overflow-hidden">
-              <Tabs defaultValue="chat" className="h-full flex flex-col">
+              <Tabs
+                defaultValue="chat"
+                className="h-full flex flex-col overflow-hidden"
+              >
                 <div className="border-b px-4">
                   <TabsList className="h-14">
                     <TabsTrigger
@@ -132,45 +143,45 @@ export default function ChatPage() {
                   </TabsList>
                 </div>
 
-                <TabsContent value="chat" className="flex-1 flex flex-col">
-                  <div className="flex-1 relative">
-                    <ScrollArea
-                      ref={scrollAreaRef}
-                      className="absolute inset-0"
-                    >
-                      <div className="p-4 space-y-4 pb-2">
-                        {messages.map((message) => (
-                          <ChatMessage key={message.id} message={message} />
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </div>
+                <TabsContent
+                  value="chat"
+                  className="flex-1 flex flex-col h-full overflow-hidden"
+                >
+                  <ScrollArea className="flex-1" ref={scrollAreaRef}>
+                    <div className="p-4 space-y-4">
+                      {messages.map((message) => (
+                        <ChatMessage key={message.id} message={message} />
+                      ))}
+                    </div>
+                  </ScrollArea>
 
-                  <div className="border-t p-4 bg-background mt-auto">
-                    <form
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <Input
-                        ref={inputRef}
-                        placeholder="Ask about your finances..."
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        className="flex-1"
-                        disabled={isProcessing}
-                      />
-                      <Button
-                        type="submit"
-                        size="icon"
-                        disabled={isProcessing || input.trim() === ""}
+                  <div className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                    <div className="max-w-3xl mx-auto p-4">
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }}
+                        className="flex items-center gap-2"
                       >
-                        <Send className="h-4 w-4" />
-                        <span className="sr-only">Send</span>
-                      </Button>
-                    </form>
+                        <Input
+                          ref={inputRef}
+                          placeholder="Ask about your finances..."
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          className="flex-1"
+                          disabled={isProcessing}
+                        />
+                        <Button
+                          type="submit"
+                          size="icon"
+                          disabled={isProcessing || input.trim() === ""}
+                        >
+                          <Send className="h-4 w-4" />
+                          <span className="sr-only">Send</span>
+                        </Button>
+                      </form>
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
