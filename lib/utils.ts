@@ -9,8 +9,18 @@ export function formatCurrency(
   amount: number,
   currency: string = "PYG"
 ): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency,
-  }).format(amount);
+  if (currency === "PYG") {
+    // Simple integer formatting for PYG
+    return Math.round(amount).toLocaleString() + " ₲";
+  }
+
+  // For other currencies, use the standard currency format
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency,
+    }).format(amount);
+  } catch (error) {
+    return amount.toLocaleString() + " " + currency;
+  }
 }

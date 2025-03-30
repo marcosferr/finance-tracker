@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 import {
   extractTransactionsFromPDF,
   type ExtractedTransaction,
+  getFileType,
 } from "@/lib/pdf-parser";
 import { User } from "@prisma/client";
 
@@ -37,9 +38,13 @@ export async function processPDFUpload(formData: FormData): Promise<{
     }
 
     // Validate file type
-    const fileType = file.name.split(".").pop()?.toLowerCase();
-    if (fileType !== "pdf") {
-      return { success: false, error: "Only PDF files are supported" };
+    const fileType = getFileType(file);
+    if (fileType === "unsupported") {
+      return {
+        success: false,
+        error:
+          "Unsupported file type. Please upload a PDF or image file (JPG, PNG, etc.)",
+      };
     }
 
     // Check if account exists and belongs to user
@@ -58,7 +63,7 @@ export async function processPDFUpload(formData: FormData): Promise<{
     const fileUpload = await prisma.fileUpload.create({
       data: {
         filename: file.name,
-        fileType: "pdf",
+        fileType: fileType,
         accountId,
         userId: user.id,
         status: "processing",
@@ -103,7 +108,7 @@ export async function processPDFUpload(formData: FormData): Promise<{
       },
     });
 
-    // Extract transactions from PDF
+    // Extract transactions from document
     let extractedTransactions: ExtractedTransaction[] = [];
     try {
       extractedTransactions = await extractTransactionsFromPDF(
@@ -127,7 +132,7 @@ export async function processPDFUpload(formData: FormData): Promise<{
 
       return {
         success: false,
-        error: "Error processing PDF file",
+        error: "Error processing document",
         fileUploadId: fileUpload.id,
       };
     }
@@ -166,7 +171,7 @@ export async function processPDFUpload(formData: FormData): Promise<{
       processedTransactions,
     };
   } catch (error) {
-    console.error("Error processing PDF upload:", error);
+    console.error("Error processing document upload:", error);
     return { success: false, error: "Something went wrong" };
   }
 }

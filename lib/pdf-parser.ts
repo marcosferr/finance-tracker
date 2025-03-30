@@ -25,6 +25,33 @@ export const TransactionSchema = z.array(
 export type ExtractedTransaction = z.infer<typeof TransactionSchema>[0];
 
 /**
+ * Determines if a file is a PDF or an image
+ */
+export function getFileType(file: File): "pdf" | "image" | "unsupported" {
+  const fileType = file.type.toLowerCase();
+
+  if (fileType === "application/pdf") {
+    return "pdf";
+  }
+
+  if (fileType.startsWith("image/")) {
+    return "image";
+  }
+
+  // Check extension as fallback
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  if (extension === "pdf") {
+    return "pdf";
+  }
+
+  if (["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension || "")) {
+    return "image";
+  }
+
+  return "unsupported";
+}
+
+/**
  * Extracts text content from a PDF file
  */
 export async function extractTextFromPDF(file: File): Promise<string> {
@@ -56,7 +83,39 @@ export async function extractTextFromPDF(file: File): Promise<string> {
 }
 
 /**
- * Extracts transactions from PDF using OpenAI's PDF handling capabilities
+ * Converts file to base64 for OpenAI API
+ */
+export async function fileToBase64(file: File): Promise<string> {
+  const arrayBuffer = await file.arrayBuffer();
+  return Buffer.from(arrayBuffer).toString("base64");
+}
+
+/**
+ * Get MIME type for file
+ */
+export function getMimeType(file: File): string {
+  // If the browser provides a type, use it
+  if (file.type) {
+    return file.type;
+  }
+
+  // Fallback to extension mapping
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const extensionMap: Record<string, string> = {
+    pdf: "application/pdf",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    gif: "image/gif",
+    webp: "image/webp",
+    bmp: "image/bmp",
+  };
+
+  return extensionMap[extension || ""] || "application/octet-stream";
+}
+
+/**
+ * Extracts transactions from PDF or image files using OpenAI's vision capabilities
  */
 export async function extractTransactionsFromPDF(
   file: File,
@@ -64,34 +123,41 @@ export async function extractTransactionsFromPDF(
   openaiApiKey: string
 ): Promise<ExtractedTransaction[]> {
   try {
-    console.log(`[PDF Parser] Starting PDF processing for file: ${file.name}`);
-    console.log(`[PDF Parser] File size: ${file.size} bytes`);
-    console.log(`[PDF Parser] File type: ${file.type}`);
+    console.log(`[Document Parser] Starting processing for file: ${file.name}`);
+    console.log(`[Document Parser] File size: ${file.size} bytes`);
+    console.log(`[Document Parser] File type: ${file.type}`);
+
+    // Check if file type is supported
+    const fileType = getFileType(file);
+    if (fileType === "unsupported") {
+      throw new Error(
+        "Unsupported file type. Please upload a PDF or image file (JPG, PNG, etc.)"
+      );
+    }
 
     // Initialize OpenAI client
     const openai = new OpenAI({
       // apiKey: openaiApiKey, // Use this if you want your user to use their own API key
       apiKey: process.env.OPENAI_API_KEY,
     });
-    console.log("[PDF Parser] OpenAI client initialized");
+    console.log("[Document Parser] OpenAI client initialized");
 
     // Convert File to base64
-    console.log("[PDF Parser] Converting file to base64...");
-    const arrayBuffer = await file.arrayBuffer();
-    const base64String = Buffer.from(arrayBuffer).toString("base64");
+    console.log("[Document Parser] Converting file to base64...");
+    const base64String = await fileToBase64(file);
     console.log(
-      `[PDF Parser] File converted to base64 (length: ${base64String.length} chars)`
+      `[Document Parser] File converted to base64 (length: ${base64String.length} chars)`
     );
 
     // Get category names for the prompt
     const categoryNames = categories.map((c) => c.name).join(", ");
-    console.log(`[PDF Parser] Available categories: ${categoryNames}`);
+    console.log(`[Document Parser] Available categories: ${categoryNames}`);
 
     // Create the function schema for OpenAI
     const functionSchema = {
       name: "extract_transactions",
       description:
-        "Extract transactions from credit card statement. Take expenses as negative values and card payments as positive.",
+        "Extract transactions from financial statement. Take expenses as negative values and payments as positive.",
       parameters: {
         type: "object",
         properties: {
@@ -128,88 +194,162 @@ export async function extractTransactionsFromPDF(
       },
     };
 
-    console.log("[PDF Parser] Making API request to OpenAI...");
-    // Call OpenAI API with function calling and PDF input
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are a specialized assistant that extracts transaction data from credit card statements and formats it as structured data. You categorize transactions into predefined categories and ensure amounts are properly signed (negative for expenses, positive for income).",
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "file",
-              file: {
-                filename: file.name,
-                file_data: `data:application/pdf;base64,${base64String}`,
-              },
-            },
-            {
-              type: "text",
-              text: `Extract all transactions from this credit card statement PDF. Use only the following categories: ${categoryNames}.`,
-            },
-          ],
-        },
-      ],
-      tools: [
-        {
-          type: "function",
-          function: functionSchema,
-        },
-      ],
-      tool_choice: {
-        type: "function",
-        function: { name: "extract_transactions" },
-      },
-    });
+    let response;
 
-    console.log("[PDF Parser] Received response from OpenAI");
+    if (fileType === "pdf") {
+      // For PDF files, use file data directly with GPT-4o
+      console.log("[Document Parser] Processing PDF file with OpenAI...");
+
+      // Get the mime type for the file
+      const mimeType = getMimeType(file);
+
+      response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a specialized assistant that extracts transaction data from financial statements and formats it as structured data. You categorize transactions into predefined categories and ensure amounts are properly signed (negative for expenses, positive for income).",
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "file",
+                file: {
+                  filename: file.name,
+                  file_data: `data:${mimeType};base64,${base64String}`,
+                },
+              },
+              {
+                type: "text",
+                text: `Extract all transactions from this financial document. Use only the following categories: ${categoryNames}.`,
+              },
+            ],
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: functionSchema,
+          },
+        ],
+        tool_choice: {
+          type: "function",
+          function: { name: "extract_transactions" },
+        },
+      });
+    } else {
+      // For image files, extract text first using vision model, then process with a text-based model
+      console.log(
+        "[Document Parser] Processing image file with OpenAI vision..."
+      );
+
+      // First, extract text from the image using vision model
+      const visionResponse = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are an assistant that extracts raw text from financial statement images.",
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Extract all text from this financial statement image. Focus on transaction data including dates, descriptions, and amounts.",
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: `data:${file.type};base64,${base64String}`,
+                },
+              },
+            ],
+          },
+        ],
+        max_tokens: 4000,
+      });
+
+      const extractedText = visionResponse.choices[0].message.content;
+      console.log(
+        "[Document Parser] Text extracted from image, processing with LLM..."
+      );
+
+      // Now process the extracted text with a text-based model to get structured transactions
+      response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "You are a specialized assistant that extracts transaction data from financial statements and formats it as structured data. You categorize transactions into predefined categories and ensure amounts are properly signed (negative for expenses, positive for income).",
+          },
+          {
+            role: "user",
+            content: `Extract transactions from this financial statement text:\n\n${extractedText}\n\nUse only the following categories: ${categoryNames}.`,
+          },
+        ],
+        tools: [
+          {
+            type: "function",
+            function: functionSchema,
+          },
+        ],
+        tool_choice: {
+          type: "function",
+          function: { name: "extract_transactions" },
+        },
+      });
+    }
+
+    console.log("[Document Parser] Received response from OpenAI");
     console.log(
-      "[PDF Parser] Response status:",
+      "[Document Parser] Response status:",
       response.choices[0].finish_reason
     );
-    console.log("[PDF Parser] Model used:", response.model);
+    console.log("[Document Parser] Model used:", response.model);
 
     // Parse the response
     const toolCall = response.choices[0].message.tool_calls?.[0];
     if (!toolCall || toolCall.function.name !== "extract_transactions") {
       console.error(
-        "[PDF Parser] Invalid tool call response:",
+        "[Document Parser] Invalid tool call response:",
         JSON.stringify(response.choices[0].message)
       );
       throw new Error("Invalid response from OpenAI");
     }
 
-    console.log("[PDF Parser] Parsing tool call response...");
+    console.log("[Document Parser] Parsing tool call response...");
     const parsed = JSON.parse(toolCall.function.arguments);
     console.log(
-      "[PDF Parser] Raw transactions:",
+      "[Document Parser] Raw transactions:",
       JSON.stringify(parsed, null, 2)
     );
 
     if (!parsed.transactions || !Array.isArray(parsed.transactions)) {
-      console.error("[PDF Parser] No transactions array in response");
-      throw new Error("No transactions found in the PDF file");
+      console.error("[Document Parser] No transactions array in response");
+      throw new Error("No transactions found in the document");
     }
 
     if (parsed.transactions.length === 0) {
-      console.warn("[PDF Parser] Empty transactions array returned");
-      throw new Error("No transactions found in the PDF file");
+      console.warn("[Document Parser] Empty transactions array returned");
+      throw new Error("No transactions found in the document");
     }
 
     console.log(
-      `[PDF Parser] Found ${parsed.transactions.length} transactions`
+      `[Document Parser] Found ${parsed.transactions.length} transactions`
     );
     const transactions = TransactionSchema.parse(parsed.transactions);
-    console.log("[PDF Parser] Successfully validated transactions with schema");
+    console.log(
+      "[Document Parser] Successfully validated transactions with schema"
+    );
 
     return transactions;
   } catch (error: any) {
-    console.error("[PDF Parser] Error details:", {
+    console.error("[Document Parser] Error details:", {
       name: error.name,
       message: error.message,
       stack: error.stack,
@@ -218,13 +358,13 @@ export async function extractTransactionsFromPDF(
 
     if (error instanceof z.ZodError) {
       console.error(
-        "[PDF Parser] Schema validation errors:",
+        "[Document Parser] Schema validation errors:",
         JSON.stringify(error.errors, null, 2)
       );
     }
 
     throw new Error(
-      `Failed to extract transactions from PDF: ${error.message}`
+      `Failed to extract transactions from document: ${error.message}`
     );
   }
 }

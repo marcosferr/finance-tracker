@@ -36,7 +36,12 @@ export default function ChatPage() {
 
   useEffect(() => {
     if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      const scrollContainer = scrollAreaRef.current.querySelector(
+        "[data-radix-scroll-area-viewport]"
+      );
+      if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -109,72 +114,72 @@ export default function ChatPage() {
   };
 
   return (
-    <div className="flex-1">
-      <div className="h-screen flex flex-col">
-        <div className="flex-1 p-4 pt-6 md:p-8">
-          <div className="grid h-full gap-4 md:grid-cols-3">
-            <div className="md:col-span-2">
-              <Card className="flex h-full flex-col">
-                <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-                  <div className="border-b px-4">
-                    <TabsList className="h-14">
-                      <TabsTrigger
-                        value="chat"
-                        className="flex items-center gap-2"
-                      >
-                        <Bot className="h-4 w-4" />
-                        <span>Financial Assistant</span>
-                      </TabsTrigger>
-                    </TabsList>
-                  </div>
+    <div className="h-[calc(100vh-4rem)] flex flex-col">
+      <div className="flex-1 p-4 md:p-6 overflow-hidden">
+        <div className="grid h-full gap-4 md:grid-cols-3">
+          <div className="md:col-span-2 h-full flex flex-col">
+            <Card className="flex-1 flex flex-col overflow-hidden">
+              <Tabs defaultValue="chat" className="h-full flex flex-col">
+                <div className="border-b px-4">
+                  <TabsList className="h-14">
+                    <TabsTrigger
+                      value="chat"
+                      className="flex items-center gap-2"
+                    >
+                      <Bot className="h-4 w-4" />
+                      <span>Financial Assistant</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-                  <TabsContent
-                    value="chat"
-                    className="flex-1 flex flex-col p-0 m-0"
-                  >
-                    <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
-                      <div className="space-y-4 pb-4">
+                <TabsContent value="chat" className="flex-1 flex flex-col">
+                  <div className="flex-1 relative">
+                    <ScrollArea
+                      ref={scrollAreaRef}
+                      className="absolute inset-0"
+                    >
+                      <div className="p-4 space-y-4 pb-2">
                         {messages.map((message) => (
                           <ChatMessage key={message.id} message={message} />
                         ))}
                       </div>
                     </ScrollArea>
+                  </div>
 
-                    <div className="border-t p-4 sticky bottom-0 bg-background">
-                      <form
-                        onSubmit={(e) => {
-                          e.preventDefault();
-                          handleSendMessage();
-                        }}
-                        className="flex items-center gap-2"
+                  <div className="border-t p-4 bg-background mt-auto">
+                    <form
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Input
+                        ref={inputRef}
+                        placeholder="Ask about your finances..."
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="flex-1"
+                        disabled={isProcessing}
+                      />
+                      <Button
+                        type="submit"
+                        size="icon"
+                        disabled={isProcessing || input.trim() === ""}
                       >
-                        <Input
-                          ref={inputRef}
-                          placeholder="Ask about your finances..."
-                          value={input}
-                          onChange={(e) => setInput(e.target.value)}
-                          className="flex-1"
-                          disabled={isProcessing}
-                        />
-                        <Button
-                          type="submit"
-                          size="icon"
-                          disabled={isProcessing || input.trim() === ""}
-                        >
-                          <Send className="h-4 w-4" />
-                          <span className="sr-only">Send</span>
-                        </Button>
-                      </form>
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </Card>
-            </div>
+                        <Send className="h-4 w-4" />
+                        <span className="sr-only">Send</span>
+                      </Button>
+                    </form>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </Card>
+          </div>
 
-            <div className="hidden md:flex flex-col gap-4">
-              <FinancialInsights />
-              <ChatSuggestions onSelectQuestion={handleSuggestedQuestion} />
-            </div>
+          <div className="hidden md:flex flex-col gap-4">
+            <FinancialInsights />
+            <ChatSuggestions onSelectQuestion={handleSuggestedQuestion} />
           </div>
         </div>
       </div>

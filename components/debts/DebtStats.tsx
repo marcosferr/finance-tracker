@@ -16,6 +16,11 @@ export function DebtStats({
   activeDebts,
   paidDebts,
 }: DebtStatsProps) {
+  const getPercentage = (value: number, total: number) => {
+    if (total === 0) return 0;
+    return ((value / total) * 100).toFixed(1);
+  };
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -37,7 +42,7 @@ export function DebtStats({
         <CardContent>
           <div className="text-2xl font-bold">{formatCurrency(totalPaid)}</div>
           <p className="text-xs text-muted-foreground">
-            {((totalPaid / totalDebt) * 100).toFixed(1)}% of total debt
+            {getPercentage(totalPaid, totalDebt)}% of total debt
           </p>
         </CardContent>
       </Card>
@@ -51,7 +56,7 @@ export function DebtStats({
             {formatCurrency(remainingDebt)}
           </div>
           <p className="text-xs text-muted-foreground">
-            {((remainingDebt / totalDebt) * 100).toFixed(1)}% remaining
+            {getPercentage(remainingDebt, totalDebt)}% remaining
           </p>
         </CardContent>
       </Card>

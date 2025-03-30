@@ -22,6 +22,7 @@ import {
   CheckCircle2,
   File,
   ArrowRight,
+  Image,
 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import {
@@ -111,10 +112,16 @@ export default function UploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
     if (selectedFile) {
-      // Check if file is PDF
+      // Check if file is PDF or image
       const fileType = selectedFile.name.split(".").pop()?.toLowerCase();
-      if (fileType !== "pdf") {
-        setErrorMessage("Only PDF files are supported");
+      if (
+        !["pdf", "jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(
+          fileType || ""
+        )
+      ) {
+        setErrorMessage(
+          "Only PDF and image files (JPG, PNG, etc.) are supported"
+        );
         setUploadStatus("error");
         return;
       }
@@ -170,7 +177,21 @@ export default function UploadPage() {
       if (!isComponentMounted) return;
 
       if (!result.success) {
-        setErrorMessage(result.error || "Error processing PDF file");
+        // Provide more specific error messages for common issues
+        if (result.error?.includes("Unsupported file type")) {
+          setErrorMessage(
+            "Only PDF and image files (JPG, PNG) are supported. PDF files are preferred for best results."
+          );
+        } else if (
+          result.error?.includes("Invalid file data") ||
+          result.error?.includes("unsupported MIME type")
+        ) {
+          setErrorMessage(
+            "There was an issue processing your file. Please try uploading a PDF file instead of an image."
+          );
+        } else {
+          setErrorMessage(result.error || "Error processing the document");
+        }
         setUploadStatus("error");
         return;
       }
@@ -183,7 +204,9 @@ export default function UploadPage() {
         setUploadStatus("success");
         setActiveStep("review");
       } else {
-        setErrorMessage("No transactions found in the PDF file");
+        setErrorMessage(
+          "No transactions found in the document. Please try a different file or format."
+        );
         setUploadStatus("error");
       }
 
@@ -193,12 +216,23 @@ export default function UploadPage() {
         const uploads = await uploadsResponse.json();
         setRecentUploads(uploads);
       }
-    } catch (error) {
-      console.error("Error processing PDF:", error);
+    } catch (error: any) {
+      console.error("Error processing document:", error);
       if (isComponentMounted) {
-        setErrorMessage(
-          "An error occurred while processing the PDF file. Please try again."
-        );
+        // Handle specific error types
+        if (
+          error.message?.includes("MIME type") ||
+          error.message?.includes("file data")
+        ) {
+          setErrorMessage(
+            "OpenAI currently has issues processing image files. Please try uploading a PDF document instead."
+          );
+        } else {
+          setErrorMessage(
+            error.message ||
+              "An error occurred while processing the document. Please try again."
+          );
+        }
         setUploadStatus("error");
       }
     }
@@ -242,6 +276,12 @@ export default function UploadPage() {
       return <FileText className="h-4 w-4" />;
     }
 
+    if (
+      ["jpg", "jpeg", "png", "gif", "webp", "bmp"].includes(extension || "")
+    ) {
+      return <Image className="h-4 w-4" />;
+    }
+
     return <File className="h-4 w-4" />;
   };
 
@@ -272,9 +312,9 @@ export default function UploadPage() {
   const renderUploadStep = () => (
     <Card>
       <CardHeader>
-        <CardTitle>Upload Credit Card Statement</CardTitle>
+        <CardTitle>Upload Financial Document</CardTitle>
         <CardDescription>
-          Upload a PDF file containing your credit card statement.
+          Upload a PDF or image file containing your financial statement.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -284,84 +324,92 @@ export default function UploadPage() {
             value={selectedAccountId}
             onValueChange={setSelectedAccountId}
           >
-            <SelectTrigger id="account">
+            <SelectTrigger className="w-full md:w-[300px]">
               <SelectValue placeholder="Select an account" />
             </SelectTrigger>
             <SelectContent>
               {accounts.map((account) => (
                 <SelectItem key={account.id} value={account.id}>
-                  {account.name} ({account.type})
+                  {account.name}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="grid w-full gap-2">
-          <Label htmlFor="file">PDF File</Label>
-          <div className="flex items-center gap-2">
+        <div className="space-y-2">
+          <Label
+            htmlFor="file-upload"
+            className="cursor-pointer w-full border-2 border-dashed rounded-lg p-6 border-border flex flex-col items-center justify-center gap-2 hover:border-primary/50 transition-colors"
+          >
+            <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center text-muted-foreground mb-2">
+              <Upload className="h-6 w-6" />
+            </div>
+            <div className="flex flex-col items-center justify-center space-y-1">
+              <p className="text-sm font-medium">
+                Click to upload or drag and drop
+              </p>
+              <p className="text-sm text-muted-foreground">
+                PDF or image files (JPG, PNG) supported
+              </p>
+            </div>
             <Input
-              id="file"
+              id="file-upload"
               type="file"
-              accept=".pdf"
+              className="hidden"
               onChange={handleFileChange}
+              accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.bmp"
             />
-            <Button
-              onClick={handleUpload}
-              disabled={
-                !file ||
-                !selectedAccountId ||
-                uploadStatus === "uploading" ||
-                uploadStatus === "processing"
-              }
-            >
-              <Upload className="mr-2 h-4 w-4" />
-              Upload
-            </Button>
-          </div>
+          </Label>
         </div>
+
+        {file && (
+          <div className="flex items-center gap-2 p-2 bg-muted rounded-md">
+            {getFileIcon(file.name)}
+            <span className="text-sm font-medium truncate">{file.name}</span>
+            <Badge variant="outline" className="ml-auto">
+              {Math.round(file.size / 1024)} KB
+            </Badge>
+          </div>
+        )}
+
+        <Button
+          onClick={handleUpload}
+          disabled={
+            !file ||
+            !selectedAccountId ||
+            uploadStatus === "uploading" ||
+            uploadStatus === "processing"
+          }
+          className="mt-2"
+        >
+          <Upload className="mr-2 h-4 w-4" />
+          Upload
+        </Button>
 
         {uploadStatus === "uploading" && (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Uploading...</span>
-              <span>{uploadProgress}%</span>
-            </div>
             <Progress value={uploadProgress} />
+            <p className="text-sm text-muted-foreground">
+              Uploading... {uploadProgress}%
+            </p>
           </div>
         )}
 
         {uploadStatus === "processing" && (
           <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Processing PDF...</span>
-              <span>This may take a minute</span>
-            </div>
             <Progress value={100} className="animate-pulse" />
+            <p className="text-sm text-muted-foreground">
+              Processing document...
+            </p>
           </div>
-        )}
-
-        {uploadStatus === "success" && (
-          <Alert className="bg-green-500/10 border-green-500/50">
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
-            <AlertTitle>Success</AlertTitle>
-            <AlertDescription>
-              Your PDF has been processed successfully.
-              {extractedTransactions.length > 0
-                ? " Please proceed to the Review & Import step to review the transactions."
-                : " No transactions were found in the PDF."}
-            </AlertDescription>
-          </Alert>
         )}
 
         {uploadStatus === "error" && (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>
-              {errorMessage ||
-                "There was an error processing your PDF file. Please try again."}
-            </AlertDescription>
+            <AlertDescription>{errorMessage}</AlertDescription>
           </Alert>
         )}
       </CardContent>
@@ -371,10 +419,11 @@ export default function UploadPage() {
           <ul className="list-disc list-inside space-y-1 mt-2">
             <li className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Only PDF files are supported
+              PDF files are preferred for best results
             </li>
-            <li>
-              Make sure your PDF contains readable text (not scanned images)
+            <li className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              Image files (JPG, PNG) are processed using OCR technology
             </li>
             <li>
               The system will attempt to categorize your transactions
@@ -395,8 +444,8 @@ export default function UploadPage() {
       <CardHeader>
         <CardTitle>Review Extracted Transactions</CardTitle>
         <CardDescription>
-          Review and edit the transactions extracted from your PDF before saving
-          them to your account.
+          Review and edit the transactions extracted from your document before
+          saving them to your account.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -550,8 +599,8 @@ export default function UploadPage() {
             <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
             <h3 className="text-lg font-medium">No transactions found</h3>
             <p className="text-sm text-muted-foreground mt-2">
-              No transactions could be extracted from the PDF file. Please try a
-              different file.
+              No transactions could be extracted from the document. Please try a
+              different file or format.
             </p>
           </div>
         )}
@@ -575,73 +624,67 @@ export default function UploadPage() {
   const renderHistoryStep = () => (
     <Card>
       <CardHeader>
-        <CardTitle>Upload History</CardTitle>
+        <CardTitle>Recent Uploads</CardTitle>
         <CardDescription>
-          View your previous file uploads and their status.
+          View your recent document uploads and their processing status.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {recentUploads.length > 0 ? (
-          <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>File</TableHead>
-                    <TableHead>Account</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Transactions</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentUploads.map((upload) => (
-                    <TableRow key={upload.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {getFileIcon(upload.filename)}
-                          <span>{upload.filename}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>{upload.account?.name || "Unknown"}</TableCell>
-                      <TableCell>
-                        {new Date(upload.uploadDate).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>{upload.transactionCount}</TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            upload.status === "completed"
-                              ? "default"
-                              : upload.status === "processing"
-                              ? "outline"
-                              : "destructive"
-                          }
-                        >
-                          {upload.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-8 text-center">
-            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No upload history</h3>
-            <p className="text-sm text-muted-foreground mt-2">
-              You haven't uploaded any files yet. Start by uploading a PDF file.
-            </p>
-          </div>
-        )}
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>File</TableHead>
+              <TableHead>Account</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Transactions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {recentUploads.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center">
+                  No uploads found
+                </TableCell>
+              </TableRow>
+            ) : (
+              recentUploads.map((upload) => (
+                <TableRow key={upload.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {getFileIcon(upload.filename)}
+                      <span className="truncate max-w-[200px]">
+                        {upload.filename}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{upload.account?.name || "-"}</TableCell>
+                  <TableCell>
+                    {new Date(upload.uploadDate).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant={
+                        upload.status === "completed"
+                          ? "default"
+                          : upload.status === "processing"
+                          ? "outline"
+                          : "destructive"
+                      }
+                    >
+                      {upload.status.charAt(0).toUpperCase() +
+                        upload.status.slice(1)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {upload.transactionCount || 0}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
       </CardContent>
-      <CardFooter>
-        <Button variant="outline" onClick={() => setActiveStep("upload")}>
-          Back to Upload
-        </Button>
-      </CardFooter>
     </Card>
   );
 
@@ -649,7 +692,7 @@ export default function UploadPage() {
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold tracking-tight">
-          Upload Credit Card Statement
+          Upload Financial Documents
         </h2>
         <div className="flex gap-2">
           <Button
