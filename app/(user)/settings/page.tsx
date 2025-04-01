@@ -28,8 +28,10 @@ import { openaiService } from "@/lib/openai-service";
 import type { UserSettings, Currency } from "@/types/finance";
 import { AVAILABLE_CURRENCIES } from "@/types/finance";
 import { useTheme } from "next-themes";
+import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
+  const t = useTranslations();
   const [settings, setSettings] = useState<UserSettings>({});
   const { theme, setTheme } = useTheme();
   const [apiKey, setApiKey] = useState("");
@@ -145,6 +147,11 @@ export default function SettingsPage() {
 
       const updatedSettings = await response.json();
       setSettings(updatedSettings);
+
+      // If language is updated, update localStorage
+      if (key === "language") {
+        localStorage.setItem("user-language", value);
+      }
     } catch (error) {
       console.error("Error updating settings:", error);
     }
@@ -153,26 +160,34 @@ export default function SettingsPage() {
   return (
     <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
       <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Settings</h2>
+        <h2 className="text-3xl font-bold tracking-tight">
+          {t("settings.title")}
+        </h2>
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="appearance">Appearance</TabsTrigger>
+          <TabsTrigger value="general">
+            {t("settings.general.title")}
+          </TabsTrigger>
+          <TabsTrigger value="appearance">
+            {t("settings.appearance.title")}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>General Settings</CardTitle>
+              <CardTitle>{t("settings.general.title")}</CardTitle>
               <CardDescription>
-                Manage your general application settings.
+                {t("settings.general.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency</Label>
+                <Label htmlFor="currency">
+                  {t("settings.general.currency")}
+                </Label>
                 <Select
                   value={settings.currency || "USD"}
                   onValueChange={(value) => updateSetting("currency", value)}
@@ -193,7 +208,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="language">Language</Label>
+                <Label htmlFor="language">
+                  {t("settings.general.language")}
+                </Label>
                 <Select
                   value={settings.language || "en"}
                   onValueChange={(value) => updateSetting("language", value)}
@@ -217,14 +234,16 @@ export default function SettingsPage() {
         <TabsContent value="appearance" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Appearance</CardTitle>
+              <CardTitle>{t("settings.appearance.title")}</CardTitle>
               <CardDescription>
-                Customize the appearance of the application.
+                {t("settings.appearance.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label htmlFor="dark-mode">Dark Mode</Label>
+                <Label htmlFor="dark-mode">
+                  {t("settings.appearance.darkMode")}
+                </Label>
                 <Switch
                   id="dark-mode"
                   checked={theme === "dark"}

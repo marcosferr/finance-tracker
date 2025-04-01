@@ -195,7 +195,16 @@ export async function generateCustomReport(
   Table relationships:
   ${JSON.stringify(schema.relationships, null, 2)}
   
-  The user id is ${userId}
+  The user id is ${userId} you cannot use any other user id. 
+  You cannot use any other table than the ones provided.
+  You cannot use any other column than the ones provided.
+  You cannot use any other function than the ones provided.
+  You cannot use any other alias than the ones provided.
+  You cannot use any other join than the ones provided.
+  You cannot use any other where clause than the ones provided.
+  You cannot use any other group by than the ones provided.
+  You cannot use any other order by than the ones provided.
+  
   Important rules:
   1. Always include the userId filter in the WHERE clause
   2. Use proper table aliases

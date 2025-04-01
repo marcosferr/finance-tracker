@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:rate-limit": "ts-node --project scripts/tsconfig.json scripts/test-rate-limit.ts"
   },
   "dependencies": {
     "@auth/core": "latest",
@@ -53,6 +54,7 @@
     "lucide-react": "^0.454.0",
     "next": "^15.2.4",
     "next-auth": "latest",
+    "next-intl": "^4.0.2",
     "next-themes": "latest",
     "nodemailer": "latest",
     "openai": "latest",
@@ -79,10 +81,13 @@
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
     "@types/node": "^22",
+    "@types/node-fetch": "^2.6.11",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "node-fetch": "^2.7.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.17",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

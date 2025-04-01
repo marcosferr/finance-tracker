@@ -1,0 +1,31 @@
+{
+  "settings": {
+    "title": "Configuración",
+    "general": {
+      "title": "Configuración General",
+      "description": "Gestiona la configuración general de la aplicación",
+      "currency": "Moneda",
+      "language": "Idioma"
+    },
+    "appearance": {
+      "title": "Apariencia",
+      "description": "Personaliza la apariencia de la aplicación",
+      "darkMode": "Modo Oscuro"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Bienvenido de nuevo",
+      "description": "Ingresa tus credenciales para iniciar sesión en tu cuenta",
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "forgotPassword": "¿Olvidaste tu contraseña?",
+      "signIn": "Iniciar sesión",
+      "signingIn": "Iniciando sesión...",
+      "or": "O",
+      "signInWithGoogle": "Iniciar sesión con Google",
+      "noAccount": "¿No tienes una cuenta?",
+      "signUp": "Regístrate"
+    }
+  }
+}

@@ -118,9 +118,11 @@ export async function chatWithAI(
     const messages = [
       {
         role: "system" as const,
-        content: `You are a helpful financial assistant. You help users understand their financial data and provide insights and advice.
-        You have access to various functions to retrieve financial information. Use these functions to gather relevant data before providing answers.
-        Always provide specific, data-driven insights based on the retrieved information.`,
+        content: `You are a helpful financial assistant. You provide users with insights and advice on savings, investments, and debt reduction.
+    You have access to various functions to retrieve financial data and should use them before providing answers.
+    Always respond in the same language as the user's query.
+    Today's date is ${new Date().toISOString().split("T")[0]}.
+    Provide specific, data-driven insights based on the retrieved information, and ensure your advice is actionable and clear.`,
       },
       ...chatContext.map((msg) => {
         if (msg.role === "function" && msg.name) {

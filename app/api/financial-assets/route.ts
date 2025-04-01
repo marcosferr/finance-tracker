@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getAuthSession } from "@/auth";
 import type { Session } from "next-auth";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   try {
@@ -21,7 +22,13 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json(financialAssets);
+    return NextResponse.json(financialAssets, {
+      headers: {
+        "Cache-Control": "no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error fetching financial assets:", error);
     return NextResponse.json(
@@ -82,6 +89,9 @@ export async function POST(request: Request) {
     const financialAsset = await prisma.financialAsset.create({
       data: newFinancialAsset,
     });
+
+    // Revalidate the financial assets page cache
+    revalidatePath("/financial-assets");
 
     return NextResponse.json(financialAsset);
   } catch (error) {

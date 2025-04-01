@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server"
-import { getAuthSession } from "@/auth"
-import prisma from "@/lib/prisma"
+import { NextResponse } from "next/server";
+import { getAuthSession } from "@/auth";
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   try {
-    const session = await getAuthSession()
+    const session = await getAuthSession();
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const categories = await prisma.category.findMany({
@@ -17,27 +18,39 @@ export async function GET() {
       orderBy: {
         name: "asc",
       },
-    })
+    });
 
-    return NextResponse.json(categories)
+    return NextResponse.json(categories, {
+      headers: {
+        "Cache-Control": "no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
-    console.error("Error fetching categories:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+    console.error("Error fetching categories:", error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await getAuthSession()
+    const session = await getAuthSession();
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { name, color, budget } = await req.json()
+    const { name, color, budget } = await req.json();
 
     if (!name || !color) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     // Check if category with same name already exists
@@ -46,10 +59,13 @@ export async function POST(req: Request) {
         name,
         userId: session.user.id,
       },
-    })
+    });
 
     if (existingCategory) {
-      return NextResponse.json({ error: "Category with this name already exists" }, { status: 400 })
+      return NextResponse.json(
+        { error: "Category with this name already exists" },
+        { status: 400 }
+      );
     }
 
     const category = await prisma.category.create({
@@ -59,12 +75,17 @@ export async function POST(req: Request) {
         budget: budget ? Number.parseFloat(budget) : null,
         userId: session.user.id,
       },
-    })
+    });
 
-    return NextResponse.json(category, { status: 201 })
+    // Revalidate the categories page cache
+    revalidatePath("/categories");
+
+    return NextResponse.json(category, { status: 201 });
   } catch (error) {
-    console.error("Error creating category:", error)
-    return NextResponse.json({ error: "Something went wrong" }, { status: 500 })
+    console.error("Error creating category:", error);
+    return NextResponse.json(
+      { error: "Something went wrong" },
+      { status: 500 }
+    );
   }
 }
-

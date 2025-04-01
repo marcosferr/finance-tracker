@@ -14,6 +14,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Wallet2, AlertCircle } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -23,6 +24,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
+  const t = useTranslations();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -95,9 +97,9 @@ export default function LoginPage() {
           <div className="mb-4 flex items-center justify-center">
             <Wallet2 className="h-10 w-10 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl font-bold">{t("auth.login.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            Enter your credentials to sign in to your account
+            {t("auth.login.description")}
           </p>
         </div>
 
@@ -116,7 +118,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("auth.login.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -132,12 +134,12 @@ export default function LoginPage() {
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("auth.login.password")}</Label>
                   <Link
                     href="/auth/forgot-password"
                     className="text-xs text-primary hover:underline"
                   >
-                    Forgot password?
+                    {t("auth.login.forgotPassword")}
                   </Link>
                 </div>
                 <Input
@@ -153,13 +155,15 @@ export default function LoginPage() {
               </div>
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
+                {loading ? t("auth.login.signingIn") : t("auth.login.signIn")}
               </Button>
             </form>
 
             <div className="mt-4 flex items-center">
               <Separator className="flex-1" />
-              <span className="mx-2 text-xs text-muted-foreground">OR</span>
+              <span className="mx-2 text-xs text-muted-foreground">
+                {t("auth.login.or")}
+              </span>
               <Separator className="flex-1" />
             </div>
 
@@ -194,19 +198,19 @@ export default function LoginPage() {
                     d="M5.27698177,14.2678769 C5.03832634,13.556323 4.90909091,12.7937589 4.90909091,12 C4.90909091,11.2182781 5.03443647,10.4668121 5.26620003,9.76452941 L1.23999023,6.65002441 C0.43658717,8.26043162 0,10.0753848 0,12 C0,13.9195484 0.444780743,15.7301709 1.23746264,17.3349879 L5.27698177,14.2678769 Z"
                   />
                 </svg>
-                Sign in with Google
+                {t("auth.login.signInWithGoogle")}
               </Button>
             )}
           </CardContent>
 
           <CardFooter className="flex justify-center p-6 pt-0">
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              {t("auth.login.noAccount")}{" "}
               <Link
                 href="/auth/register"
                 className="text-primary hover:underline"
               >
-                Sign up
+                {t("auth.login.signUp")}
               </Link>
             </p>
           </CardFooter>

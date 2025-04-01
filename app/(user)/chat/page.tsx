@@ -11,7 +11,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { FinancialInsights } from "@/components/financial-insights";
 import { ChatSuggestions } from "@/components/chat-suggestions";
 import { processChatQuery } from "@/lib/chat-processor";
 import type { ChatMessage as ChatMessageType } from "@/types/finance";
@@ -189,7 +188,6 @@ export default function ChatPage() {
           </div>
 
           <div className="hidden md:flex flex-col gap-4">
-            <FinancialInsights />
             <ChatSuggestions onSelectQuestion={handleSuggestedQuestion} />
           </div>
         </div>

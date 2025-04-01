@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/auth";
 import prisma from "@/lib/prisma";
 import { User } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 
 export async function GET() {
   try {
@@ -31,10 +32,22 @@ export async function GET() {
         },
       });
 
-      return NextResponse.json(defaultSettings);
+      return NextResponse.json(defaultSettings, {
+        headers: {
+          "Cache-Control": "no-store, must-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      });
     }
 
-    return NextResponse.json(settings);
+    return NextResponse.json(settings, {
+      headers: {
+        "Cache-Control": "no-store, must-revalidate",
+        Pragma: "no-cache",
+        Expires: "0",
+      },
+    });
   } catch (error) {
     console.error("Error fetching settings:", error);
     return NextResponse.json(
@@ -87,6 +100,9 @@ export async function PATCH(req: Request) {
         },
       });
     }
+
+    // Revalidate the settings page cache
+    revalidatePath("/settings");
 
     return NextResponse.json(settings);
   } catch (error) {

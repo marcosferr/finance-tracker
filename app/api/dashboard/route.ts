@@ -1,17 +1,31 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { FinancialData, Transaction } from "@/types/finance";
+import { revalidatePath } from "next/cache";
+import { getAuthSession } from "@/auth";
 
 export async function GET(request: Request) {
   try {
-    const { searchParams } = new URL(request.url);
-    const userId = searchParams.get("userId");
+    // Get the authenticated user's session
+    const session = await getAuthSession();
 
-    if (!userId) {
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const requestedUserId = searchParams.get("userId");
+
+    if (!requestedUserId) {
       return NextResponse.json(
         { error: "User ID is required" },
         { status: 400 }
       );
+    }
+
+    // Verify that the requesting user can only access their own data
+    if (requestedUserId !== session.user.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
     // Get all necessary data in parallel
@@ -24,7 +38,7 @@ export async function GET(request: Request) {
       financialAssets,
     ] = await Promise.all([
       prisma.transaction.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
         include: {
           category: true,
           account: true,
@@ -32,19 +46,19 @@ export async function GET(request: Request) {
         orderBy: { date: "desc" },
       }),
       prisma.category.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
       }),
       prisma.financialAccount.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
       }),
       prisma.userSettings.findUnique({
-        where: { userId },
+        where: { userId: session.user.id },
       }),
       prisma.debt.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
       }),
       prisma.financialAsset.findMany({
-        where: { userId },
+        where: { userId: session.user.id },
       }),
     ]);
 
@@ -69,7 +83,7 @@ export async function GET(request: Request) {
           SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses
         FROM "Transaction"
         WHERE 
-          "userId" = ${userId}
+          "userId" = ${session.user.id}
           AND date >= ${twelveMonthsAgo}
         GROUP BY DATE_TRUNC('month', date)
       ),
@@ -79,7 +93,7 @@ export async function GET(request: Request) {
           SUM(balance) as savings
         FROM "FinancialAccount"
         WHERE 
-          "userId" = ${userId}
+          "userId" = ${session.user.id}
           AND type = 'SAVINGS'
           AND "createdAt" >= ${twelveMonthsAgo}
         GROUP BY DATE_TRUNC('month', "createdAt")
@@ -191,12 +205,50 @@ export async function GET(request: Request) {
         savings: Number(row.savings),
       })),
     };
+    }
 
-    return NextResponse.json(financialData);
+    // Regular response without caching info
+    return NextResponse.json(financialData, {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
+      },
+    });
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     return NextResponse.json(
       { error: "Failed to fetch dashboard data" },
+      {
+        status: 500,
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-store",
+        },
+      }
+    );
+  }
+}
+
+// Add cache invalidation for related mutations
+export async function POST(request: Request) {
+  try {
+    // Get the authenticated user's session
+    const session = await getAuthSession();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Your POST logic here
+
+    // Invalidate dashboard cache for this specific user
+    revalidatePath(`/api/dashboard?userId=${session.user.id}`);
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("Error in dashboard POST:", error);
+    return NextResponse.json(
+      { error: "Failed to process dashboard request" },
       { status: 500 }
     );
   }

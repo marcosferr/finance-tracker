@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/auth";
 import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 export async function PATCH(
   req: Request,
@@ -68,6 +69,9 @@ export async function PATCH(
       },
     });
 
+    // Revalidate the categories page cache
+    revalidatePath("/categories");
+
     return NextResponse.json(category);
   } catch (error) {
     console.error("Error updating category:", error);
@@ -110,6 +114,9 @@ export async function DELETE(
         id: params.id,
       },
     });
+
+    // Revalidate the categories page cache
+    revalidatePath("/categories");
 
     return NextResponse.json({ success: true });
   } catch (error) {

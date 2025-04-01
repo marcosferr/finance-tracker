@@ -1,0 +1,31 @@
+{
+  "settings": {
+    "title": "Settings",
+    "general": {
+      "title": "General Settings",
+      "description": "Manage your general application settings",
+      "currency": "Currency",
+      "language": "Language"
+    },
+    "appearance": {
+      "title": "Appearance",
+      "description": "Customize the appearance of the application",
+      "darkMode": "Dark Mode"
+    }
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back",
+      "description": "Enter your credentials to sign in to your account",
+      "email": "Email",
+      "password": "Password",
+      "forgotPassword": "Forgot password?",
+      "signIn": "Sign in",
+      "signingIn": "Signing in...",
+      "or": "OR",
+      "signInWithGoogle": "Sign in with Google",
+      "noAccount": "Don't have an account?",
+      "signUp": "Sign up"
+    }
+  }
+}
