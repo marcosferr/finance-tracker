@@ -205,26 +205,13 @@ export async function GET(request: Request) {
         savings: Number(row.savings),
       })),
     };
-    }
 
-    // Regular response without caching info
-    return NextResponse.json(financialData, {
-      headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60",
-      },
-    });
+    return NextResponse.json(financialData);
   } catch (error) {
     console.error("Error fetching dashboard data:", error);
     return NextResponse.json(
       { error: "Failed to fetch dashboard data" },
-      {
-        status: 500,
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "no-store",
-        },
-      }
+      { status: 500 }
     );
   }
 }
