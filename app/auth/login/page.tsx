@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Wallet2, AlertCircle } from "lucide-react";
+import { Wallet2, AlertCircle, InfoIcon } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 const loginSchema = z.object({
@@ -39,8 +39,8 @@ export default function LoginPage() {
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: "",
-      password: "",
+      email: "user@test.com",
+      password: "UserPassword1!",
     },
   });
 
@@ -115,6 +115,14 @@ export default function LoginPage() {
                 </AlertDescription>
               </Alert>
             )}
+
+            <Alert className="mb-4 border-blue-500 bg-blue-500/10 text-blue-500">
+              <InfoIcon className="h-4 w-4" />
+              <AlertDescription>
+                You can log in and try this portfolio project with the default
+                test account: <strong>user@test.com</strong>
+              </AlertDescription>
+            </Alert>
 
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-1">
