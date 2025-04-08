@@ -9,9 +9,9 @@ const fetcher = async (url: string) => {
   return response.json();
 };
 
-export function useDashboardData(userId: string) {
+export function useDashboardData() {
   const { data, error, isLoading, mutate } = useSWR<FinancialData>(
-    `/api/dashboard?userId=${userId}`,
+    `/api/dashboard`,
     fetcher,
     {
       refreshInterval: 30000, // Refresh every 30 seconds

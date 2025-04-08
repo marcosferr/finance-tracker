@@ -9,9 +9,7 @@ import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
-  const { data, error, isLoading } = useDashboardData(
-    "cm8ns346x000ci7mkf45em9jq"
-  );
+  const { data, error, isLoading } = useDashboardData();
 
   if (error) {
     return (

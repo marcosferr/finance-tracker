@@ -13,20 +13,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const requestedUserId = searchParams.get("userId");
-
-    if (!requestedUserId) {
-      return NextResponse.json(
-        { error: "User ID is required" },
-        { status: 400 }
-      );
-    }
-
-    // Verify that the requesting user can only access their own data
-    if (requestedUserId !== session.user.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
-    }
+    // User ID is obtained directly from the session
+    const userId = session.user.id;
 
     // Get all necessary data in parallel
     const [
@@ -77,28 +65,28 @@ export async function GET(request: Request) {
 
     const monthlyData = await prisma.$queryRaw<MonthlyDataRow[]>`
       WITH monthly_transactions AS (
-        SELECT 
+        SELECT
           DATE_TRUNC('month', date) as month,
           SUM(CASE WHEN amount > 0 THEN amount ELSE 0 END) as income,
           SUM(CASE WHEN amount < 0 THEN ABS(amount) ELSE 0 END) as expenses
         FROM "Transaction"
-        WHERE 
+        WHERE
           "userId" = ${session.user.id}
           AND date >= ${twelveMonthsAgo}
         GROUP BY DATE_TRUNC('month', date)
       ),
       monthly_savings AS (
-        SELECT 
+        SELECT
           DATE_TRUNC('month', "createdAt") as month,
           SUM(balance) as savings
         FROM "FinancialAccount"
-        WHERE 
+        WHERE
           "userId" = ${session.user.id}
           AND type = 'SAVINGS'
           AND "createdAt" >= ${twelveMonthsAgo}
         GROUP BY DATE_TRUNC('month', "createdAt")
       )
-      SELECT 
+      SELECT
         mt.month,
         mt.income,
         mt.expenses,
@@ -229,7 +217,7 @@ export async function POST(request: Request) {
     // Your POST logic here
 
     // Invalidate dashboard cache for this specific user
-    revalidatePath(`/api/dashboard?userId=${session.user.id}`);
+    revalidatePath(`/api/dashboard`);
 
     return NextResponse.json({ success: true });
   } catch (error) {
